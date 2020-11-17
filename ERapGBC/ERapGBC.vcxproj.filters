@@ -24,9 +24,6 @@
     <ClInclude Include="win_color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="disasm.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -39,6 +36,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="execution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="disasm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

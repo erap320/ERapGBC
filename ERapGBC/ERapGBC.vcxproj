@@ -139,12 +139,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="architecture.hpp" />
-    <ClInclude Include="disasm.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="win_color.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="architecture.cpp" />
+    <ClCompile Include="disasm.cpp" />
     <ClCompile Include="execution.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="utils.cpp" />

@@ -1,4 +1,6 @@
 #include "architecture.hpp"
+using std::cout;
+using std::endl;
 
 byte Argument::r8()
 {
@@ -328,7 +330,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Copy
-		arg1 = arg2;
+		arg1.copy(arg2);
 		return true;
 		break;
 	}
@@ -336,7 +338,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		if (arg1.type == C_REG && arg1.address && arg2.type == REG && !arg2.address)
 		{
 			//Copy
-			arg1 = arg2;
+			arg1.copy(arg2);
 			//Decrement
 			arg2.w16(arg2.r16().to_ulong() - 1);
 			return true;
@@ -344,7 +346,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
 		{
 			//Copy
-			arg1 = arg2;
+			arg1.copy(arg2);
 			//Decrement
 			arg1.w16(arg1.r16().to_ulong() - 1);
 			return true;
@@ -362,7 +364,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		if (arg1.type == C_REG && arg1.address && arg2.type == REG && !arg2.address)
 		{
 			//Copy
-			arg1 = arg2;
+			arg1.copy(arg2);
 			//Decrement
 			arg2.w16(arg2.r16().to_ulong() + 1);
 			return true;
@@ -370,7 +372,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
 		{
 			//Copy
-			arg1 = arg2;
+			arg1.copy(arg2);
 			//Decrement
 			arg1.w16(arg1.r16().to_ulong() + 1);
 			return true;
@@ -1488,4 +1490,33 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		break;
 	}
 	}
+}
+
+bool Architecture::step(bool debug)
+{
+	//Fetch and decode instruction
+	data address = PC.to_ulong();
+	Instruction instr = disasm(address, ram);
+
+	//Execute
+	bool result = exec(instr);
+
+	if (debug || !result)
+	{
+		// Clear the screen
+		for (int i = 0; i < 100; i++) cout << endl;
+
+		cout << "\n################ INSTRUCTION ################\n";
+		printf("%#.4x | ", address);
+		cout << (string)instr << endl;
+
+		print_registers();
+
+		print_stack(5);
+	}
+
+	//Increase program counter
+	PC = (address + instr.length) & 0xffff;
+
+	return result;
 }

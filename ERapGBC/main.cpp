@@ -7,7 +7,12 @@ int main()
 {
 	Architecture* arch = Architecture::instance();
 
-	arch->exec(RL, Argument{arch->BC});
+	while (true)
+	{
+		arch->step(true);
+
+		std::cin.get();
+	}
 
 	return 0;
 }

@@ -56,3 +56,5 @@ void Architecture::print_stack(unsigned int rows)
 	}
 	cout << "---------------------------------------------\n";
 }
+
+

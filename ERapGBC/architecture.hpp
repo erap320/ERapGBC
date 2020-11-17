@@ -111,6 +111,13 @@ struct Argument {
 		address = a;
 	}
 
+	Argument()
+	{
+		type = NONE;
+		value.immediate = 0;
+		address = NO_ADDR;
+	}
+
 	//Read 8 bits from argument
 	byte r8();
 
@@ -123,15 +130,15 @@ struct Argument {
 	//Write 16 bits to argument
 	void w16(word val);
 
-	Argument& operator=(Argument& other) // copy assignment
+	//Copy the value of one argument to the other,
+	//respecting the size of the data it refers to
+	void copy(Argument& other)
 	{
 		//Size of the two arguments should always be the same
-
 		if (this->type >= W_REG || other.type >= W_REG) //All 16 bit types come after W_REG
 			this->w16(other.r16());
 		else
 			this->w8(other.r8());
-		return *this;
 	}
 
 	//Define cast to string for printing
@@ -163,7 +170,27 @@ public:
 	Command cmd;
 	Argument arg1;
 	Argument arg2;
+	//Length of the binary instruction in bytes
+	unsigned short length;
+
+	Instruction(Command c, Argument a1 = Argument{ NONE }, Argument a2 = Argument{ NONE }, unsigned short len = 0)
+	{
+		cmd = c;
+		arg1 = a1;
+		arg2 = a2;
+		length = len;
+	}
+
+	void setLength(unsigned short len)
+	{
+		length = len;
+	}
+
+	//Define cast to string for printing
+	operator string() const { return "{Command: " + to_string(cmd) + "; Arg1: " + (string)arg1 + "; Arg2: " + (string)arg2 + "}"; }
 };
+
+Instruction disasm(data address, byte* const& ram);
 
 //Architecture singleton
 class Architecture
@@ -198,6 +225,9 @@ public:
 	//Returns false if there was an error while executing the instruction
 	bool exec(Instruction i);
 	bool exec(Command cmd, Argument arg1 = Argument{ NONE }, Argument arg2 = Argument{ NONE });
+
+	//Execute one instruction pointed by PC
+	bool step(bool debug);
 
 	//Write the content of the ram in a .bin file
 	void dump_ram();
