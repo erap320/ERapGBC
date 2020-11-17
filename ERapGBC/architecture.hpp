@@ -155,7 +155,7 @@ enum Command {
 	JR, JRNZ, JRZ, JRNC, JRC,
 	CALL, CALLNZ, CALLZ, CALLNC, CALLC,
 	RET, RETNZ, RETZ, RETNC, RETC, RETI,
-	RST,
+	RST
 };
 
 class Instruction {

@@ -284,7 +284,7 @@ void Argument::w16(word val)
 			break;
 		}
 		case IMM:
-		case W_IMM:{
+		case W_IMM: {
 			error("Can't write value to IMM argument: " + val.to_string());
 			break;
 		}
@@ -322,7 +322,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case LD: {
 		if (arg1.type == NONE || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with LD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with LD instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -350,7 +351,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with LDD instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -375,7 +377,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with LDI instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -399,7 +402,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDHL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with LDHL instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		break;
@@ -407,7 +411,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case PUSH: {
 		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with PUSH instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with PUSH instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		else
@@ -416,7 +421,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong();
 			//Copy
 			ram[stack] = (val >> BYTE_SIZE).to_ulong();
-			ram[stack-1] = (val & (word)0xff).to_ulong();
+			ram[stack - 1] = (val & (word)0xff).to_ulong();
 			//Decrement
 			SP = SP.to_ulong() - 2;
 			return true;
@@ -426,13 +431,14 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case POP: {
 		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with PUSH instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with PUSH instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		else
 		{
 			data stack = SP.to_ulong();
-			arg1.w16( word(ram[stack].to_string() + ram[stack + 1].to_string()) );
+			arg1.w16(word(ram[stack].to_string() + ram[stack + 1].to_string()));
 			//Increment
 			SP = SP.to_ulong() + 2;
 			return true;
@@ -442,13 +448,14 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case ADD: {
 		if (arg1.type == NONE || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with ADD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with ADD instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
 		//Add
 		data res = arg1.r8().to_ulong() + arg2.r8().to_ulong();
-		
+
 		switch (arg1.type)
 		{
 		case REG:
@@ -477,12 +484,13 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			Cflag(res > 0xffff);
 		}
 
-		return true;	
+		return true;
 	}
 	case ADC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with ADC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with ADC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -500,7 +508,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SUB: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SUB instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SUB instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -518,7 +527,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SUBC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with SUBC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SUBC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -536,7 +546,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case AND: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with AND instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with AND instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -554,7 +565,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case OR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with OR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with OR instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -572,7 +584,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case XOR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with XOR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with XOR instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -590,10 +603,11 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CP: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CP instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
-		
+
 		//Flags
 		Zflag(A == arg1.r8());
 		Nflag(1);
@@ -605,12 +619,13 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case INC: {
 		if (arg1.type == NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with INC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with INC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
 		//Increase
-		data res = arg1.r8().to_ulong()+1;
+		data res = arg1.r8().to_ulong() + 1;
 		switch (arg1.type)
 		{
 		case REG:
@@ -633,7 +648,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case DEC: {
 		if (arg1.type == NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with DEC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with DEC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -663,7 +679,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SWAP: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SWAP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SWAP instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -683,7 +700,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case DAA: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with DAA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with DAA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -692,9 +710,10 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		return true;
 	}
 	case CPL: {
-		if (arg1.type != NONE|| arg2.type != NONE)
+		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CPL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CPL instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -711,7 +730,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CCF: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CCF instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CCF instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -726,7 +746,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SCF: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SCF instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SCF instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -741,7 +762,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case NOP: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with NOP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with NOP instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -752,7 +774,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case HALT: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with HALT instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with HALT instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -764,7 +787,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case STOP: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with STOP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with STOP instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -776,7 +800,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case DI: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with DI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with DI instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -788,7 +813,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case EI: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with EI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with EI instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -800,7 +826,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RLCA: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RLCA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RLCA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -819,7 +846,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RLA: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RLA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RLA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -838,7 +866,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RRCA: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RRCA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RRCA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -857,7 +886,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RRA: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RRA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RRA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -876,7 +906,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RLC: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RLC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RLC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -896,7 +927,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RL: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RL instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -916,7 +948,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RRC: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RRC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RRC instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -936,7 +969,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RR instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -956,7 +990,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SLA: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SLA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SLA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -975,7 +1010,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SRA: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SRA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SRA instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -995,7 +1031,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SRL: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SRL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SRL instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1014,14 +1051,15 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case BIT: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
 		{
-			error("One or more arguments type incompatible with BIT instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with BIT instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
-		unsigned short bit = ( arg1.r8() & (byte)0x7 ).to_ulong();
+		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
 
 		//Flags
-		Zflag( !(arg2.r8()[bit]) );
+		Zflag(!(arg2.r8()[bit]));
 		Nflag(0);
 		Hflag(1);
 		//Cflag not affected
@@ -1031,7 +1069,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SET: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
 		{
-			error("One or more arguments type incompatible with SET instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with SET instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1046,7 +1085,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RES: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
 		{
-			error("One or more arguments type incompatible with RES instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RES instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1059,9 +1099,10 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		return true;
 	}
 	case JP: {
-		if( (arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address) ) || arg2.type != NONE)
+		if ((arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address)) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JP instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1072,11 +1113,12 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JPNZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JP(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JP(NZ) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
-		if(!Zflag())
+		if (!Zflag())
 			PC = arg1.r16();
 
 		return true;
@@ -1084,7 +1126,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JPZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JP(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JP(Z) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1096,7 +1139,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JPNC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JP(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JP(NC) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1108,7 +1152,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JPC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JP(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JP(C) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1120,7 +1165,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JR: {
 		if (arg1.type != IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JR instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1132,7 +1178,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JRNZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JR(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JR(NZ) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1144,7 +1191,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JRZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JR(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JR(Z) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1156,7 +1204,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JRNC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JR(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JR(NC) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1168,7 +1217,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case JRC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with JR(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with JR(C) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1180,7 +1230,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CALL: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CALL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CALL instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1201,7 +1252,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CALLNZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CALL(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CALL(NZ) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1225,7 +1277,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CALLZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CALL(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CALL(Z) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1249,7 +1302,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CALLNC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CALL(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CALL(NC) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1268,12 +1322,13 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			PC = arg1.r16();
 		}
 
-		return true; 
+		return true;
 	}
 	case CALLC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CALL(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with CALL(C) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1297,7 +1352,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RST: {
 		if (arg1.type != IMM || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RST instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RST instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1318,7 +1374,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RET: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1327,13 +1384,14 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
 		//Increment
 		SP = SP.to_ulong() + 2;
-		
+
 		return true;
 	}
 	case RETNZ: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET(NZ) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1351,7 +1409,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RETZ: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET(Z) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1369,7 +1428,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RETNC: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET(NC) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1387,7 +1447,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RETC: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET(C) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1405,7 +1466,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case RETI: {
 		if (arg1.type != NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with RET(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			printf("%#.4x | ", PC.to_ulong());
+			error("One or more arguments type incompatible with RET(NZ) instruction: " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -1414,13 +1476,14 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
 		//Increment
 		SP = SP.to_ulong() + 2;
-		
+
 		//TODO implement EI
 
 		return true;
 	}
 	default: {
-		error("Invalid instruction at " + PC.to_string() + ": " + to_string(cmd));
+		printf("%#.4x | ", PC.to_ulong());
+		error("Invalid instruction: " + to_string(cmd));
 		return false;
 		break;
 	}
