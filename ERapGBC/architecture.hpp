@@ -162,7 +162,8 @@ enum Command {
 	JR, JRNZ, JRZ, JRNC, JRC,
 	CALL, CALLNZ, CALLZ, CALLNC, CALLC,
 	RET, RETNZ, RETZ, RETNC, RETC, RETI,
-	RST
+	RST,
+	ERR
 };
 
 class Instruction {
@@ -190,7 +191,7 @@ public:
 	operator string() const { return "{Command: " + to_string(cmd) + "; Arg1: " + (string)arg1 + "; Arg2: " + (string)arg2 + "}"; }
 };
 
-Instruction disasm(data address, byte* const& ram);
+Instruction disasm(data address);
 
 //Architecture singleton
 class Architecture

@@ -1496,16 +1496,13 @@ bool Architecture::step(bool debug)
 {
 	//Fetch and decode instruction
 	data address = PC.to_ulong();
-	Instruction instr = disasm(address, ram);
+	Instruction instr = disasm(address);
 
 	//Execute
 	bool result = exec(instr);
 
 	if (debug || !result)
 	{
-		// Clear the screen
-		for (int i = 0; i < 100; i++) cout << endl;
-
 		cout << "\n################ INSTRUCTION ################\n";
 		printf("%#.4x | ", address);
 		cout << (string)instr << endl;
