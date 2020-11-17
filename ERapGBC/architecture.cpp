@@ -31,7 +31,7 @@ void Architecture::dump_ram()
 
 void Architecture::print_registers()
 {
-	cout << "################# REGISTERS #################\n";
+	cout << "\n################# REGISTERS #################\n";
 	cout << "PC:\t" << PC.to_string() << endl;
 	cout << "SP:\t" << SP.to_string() << endl;
 	cout << "A:\t" << A.to_string() << "\tF:\t" << F.to_string() << endl;
@@ -39,12 +39,12 @@ void Architecture::print_registers()
 	cout << "D:\t" << D.to_string() << "\tE:\t" << E.to_string() << endl;
 	cout << "H:\t" << H.to_string() << "\tL:\t" << L.to_string() << endl;
 	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << endl;
-	cout << "---------------------------------------------\n\n";
+	cout << "---------------------------------------------\n";
 }
 
 void Architecture::print_stack(unsigned int rows)
 {
-	cout << "################### STACK ###################\n";
+	cout << "\n################### STACK ###################\n";
 	data addr = SP.to_ulong();
 
 	printf("%#.4x | ", addr);
@@ -54,5 +54,5 @@ void Architecture::print_stack(unsigned int rows)
 		printf("%#.4x | ", addr+i);
 		cout << ram[addr + i].to_string() << endl;
 	}
-	cout << "---------------------------------------------\n\n";
+	cout << "---------------------------------------------\n";
 }

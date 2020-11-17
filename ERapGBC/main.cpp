@@ -7,23 +7,13 @@ int main()
 {
 	Architecture* arch = Architecture::instance();
 
-	arch->BC = 0xe0f0;
-
-	arch->exec(INC, Argument{ arch->C });
-	
-	arch->print_registers();
-
-	arch->exec(ADD, Argument{ arch->A }, Argument{ arch->C });
+	arch->exec(LD, Argument{ arch->BC }, Argument{ 0xe2f0, W_IMM });
 
 	arch->print_registers();
 
-	arch->exec(SUB, Argument{ 0xf1, IMM });
+	arch->exec(SWAP, Argument{ arch->B });
 
 	arch->print_registers();
-
-	arch->exec(PUSH, Argument{ arch->BC });
-
-	arch->print_stack(5);
 
 	return 0;
 }

@@ -142,8 +142,20 @@ enum Command {
 	LD, LDD, LDI, LDH, LDHL,
 	PUSH, POP,
 	ADD, ADC, SUB, SUBC,
-	AND, OR, XOR, CP,
-	INC, DEC
+	AND, OR, XOR, CP, CPL,
+	INC, DEC,
+	SWAP, DAA,
+	CCF, SCF,
+	NOP, HALT, STOP,
+	DI, EI,
+	RLCA, RLA, RRCA, RRA, RLC, RL, RRC, RR,
+	SLA, SRA, SRL,
+	BIT, SET, RES,
+	JP, JPNZ, JPZ, JPNC, JPC,
+	JR, JRNZ, JRZ, JRNC, JRC,
+	CALL, CALLNZ, CALLZ, CALLNC, CALLC,
+	RET, RETNZ, RETZ, RETNC, RETC, RETI,
+	RST,
 };
 
 class Instruction {
@@ -185,7 +197,7 @@ public:
 	//Function that executes instructions
 	//Returns false if there was an error while executing the instruction
 	bool exec(Instruction i);
-	bool exec(Command cmd, Argument arg1, Argument arg2 = Argument{ NONE });
+	bool exec(Command cmd, Argument arg1 = Argument{ NONE }, Argument arg2 = Argument{ NONE });
 
 	//Write the content of the ram in a .bin file
 	void dump_ram();

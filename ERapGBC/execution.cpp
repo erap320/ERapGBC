@@ -322,7 +322,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case LD: {
 		if (arg1.type == NONE || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with LD instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with LD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -350,7 +350,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDD instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with LDD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -375,7 +375,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDI instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with LDI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -399,7 +399,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		else
 		{
-			error("One or more arguments type incompatible with LDHL instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with LDHL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		break;
@@ -407,7 +407,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case PUSH: {
 		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with PUSH instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with PUSH instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		else
@@ -426,7 +426,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case POP: {
 		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with PUSH instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with PUSH instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		else
@@ -440,27 +440,49 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		break;
 	}
 	case ADD: {
-		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
+		if (arg1.type == NONE || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with ADD instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with ADD instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
 		//Add
 		data res = arg1.r8().to_ulong() + arg2.r8().to_ulong();
-		arg1.w8(res & 0xffff);
+		
+		switch (arg1.type)
+		{
+		case REG:
+			arg1.w8(res & 0xff);
+		case W_REG:
+		case C_REG:
+			arg1.w16(res & 0xffff);
+		}
+
 		//Flags
-		Zflag(res == 0);
+		switch (arg1.type)
+		{
+		case REG:
+			Zflag(res == 0);
+		case W_REG:
+			Zflag(0);
+		}
 		Nflag(0);
 		//TODO half carry
-		Cflag(res > 0xff);
+		switch (arg1.type)
+		{
+		case REG:
+			Cflag(res > 0xff);
+		case C_REG:
+		case W_REG:
+			Cflag(res > 0xffff);
+		}
 
 		return true;	
 	}
 	case ADC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with ADC instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with ADC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -478,7 +500,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SUB: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with SUB instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with SUB instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -496,7 +518,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case SUBC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
 		{
-			error("One or more arguments type incompatible with SUBC instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with SUBC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -514,7 +536,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case AND: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with AND instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with AND instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -532,7 +554,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case OR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with OR instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with OR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -550,7 +572,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case XOR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with XOR instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with XOR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
@@ -568,7 +590,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	case CP: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with CP instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with CP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 		
@@ -581,43 +603,824 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		return true;
 	}
 	case INC: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		if (arg1.type == NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with INC instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with INC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
-		//And
-		byte res = arg1.r8().to_ulong()+1;
-		arg1.w8(res);
+		//Increase
+		data res = arg1.r8().to_ulong()+1;
+		switch (arg1.type)
+		{
+		case REG:
+			arg1.w8(res & 0xff);
+		case W_REG:
+		case C_REG:
+			arg1.w16(res & 0xffff);
+		}
 		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		//TODO half carry
+		if (arg1.type == REG)
+		{
+			Zflag(res == 0);
+			Nflag(0);
+			//TODO half carry
+		}
 		//Cflag unaffected
 
 		return true;
 	}
 	case DEC: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		if (arg1.type == NONE || arg2.type != NONE)
 		{
-			error("One or more arguments type incompatible with DEC instruction: " + (string)arg1 + "," + (string)arg2);
+			error("One or more arguments type incompatible with DEC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
 			return false;
 		}
 
-		//And
-		byte res = arg1.r8().to_ulong() - 1;
-		arg1.w8(res);
+		//Decrease
+		data res = arg1.r8().to_ulong() - 1;
+		switch (arg1.type)
+		{
+		case REG:
+			arg1.w8(res & 0xff);
+		case W_REG:
+		case C_REG:
+			arg1.w16(res & 0xffff);
+		}
 		//Flags
 		Zflag(res == 0);
-		Nflag(1);
+		if (arg1.type == REG)
+		{
+			Zflag(res == 0);
+			Nflag(1);
+			//TODO half carry
+		}
 		//TODO half carry
 		//Cflag unaffected
 
 		return true;
 	}
+	case SWAP: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with SWAP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Swap
+		byte res = arg1.r8() & (byte)0xf0;
+		res >>= 4;
+		res = res.to_ulong() + ((arg1.r8() & (byte)0x0f) << 4).to_ulong();
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(0);
+
+		return true;
+	}
+	case DAA: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with DAA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		warning("DAA not implemented yet");
+
+		return true;
+	}
+	case CPL: {
+		if (arg1.type != NONE|| arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CPL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Not
+		A = ~A;
+		//Flags
+		//Zflag not affected
+		Nflag(1);
+		Hflag(1);
+		//Cflag not affected
+
+		return true;
+	}
+	case CCF: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CCF instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Flags
+		//Zflag not affected
+		Nflag(0);
+		Hflag(0);
+		Cflag(!Cflag());
+
+		return true;
+	}
+	case SCF: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with SCF instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Flags
+		//Zflag not affected
+		Nflag(0);
+		Hflag(0);
+		Cflag(1);
+
+		return true;
+	}
+	case NOP: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with NOP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Nothing :)
+
+		return true;
+	}
+	case HALT: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with HALT instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//TODO implement halt
+		//Power down CPU until an interrupt occur
+
+		return true;
+	}
+	case STOP: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with STOP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//TODO implement stop
+		//Halt CPU & LCD display until button pressed
+
+		return true;
+	}
+	case DI: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with DI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//TODO implement DI
+		//Interrupts are disabled after  instruction after DI is executed
+
+		return true;
+	}
+	case EI: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with EI instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//TODO implement EI
+		//Interrupts are enabled after  instruction after EI is executed
+
+		return true;
+	}
+	case RLCA: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RLCA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate left
+		byte res = A << 1;
+		res[0] = A[7];
+		A = res;
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(A[7]);
+
+		return true;
+	}
+	case RLA: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RLA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate left
+		byte res = A << 1;
+		res[0] = Cflag();
+		A = res;
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(A[7]);
+
+		return true;
+	}
+	case RRCA: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RRCA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate right
+		byte res = A >> 1;
+		res[7] = A[0];
+		A = res;
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(A[0]);
+
+		return true;
+	}
+	case RRA: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RRA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate right
+		byte res = A >> 1;
+		res[7] = Cflag();
+		A = res;
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(A[0]);
+
+		return true;
+	}
+	case RLC: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RLC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate left
+		byte old = arg1.r8();
+		byte res = old << 1;
+		res[0] = old[7];
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[7]);
+
+		return true;
+	}
+	case RL: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate left
+		byte old = arg1.r8();
+		byte res = old << 1;
+		res[0] = Cflag();
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[7]);
+
+		return true;
+	}
+	case RRC: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RRC instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate right
+		byte old = arg1.r8();
+		byte res = old >> 1;
+		res[7] = old[0];
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[0]);
+
+		return true;
+	}
+	case RR: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Rotate right
+		byte old = arg1.r8();
+		byte res = old >> 1;
+		res[7] = Cflag();
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[0]);
+
+		return true;
+	}
+	case SLA: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with SLA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Shift left
+		byte old = arg1.r8();
+		byte res = old << 1;
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[7]);
+
+		return true;
+	}
+	case SRA: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with SRA instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Shift right
+		byte old = arg1.r8();
+		byte res = old >> 1;
+		res[7] = old[7];
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[0]);
+
+		return true;
+	}
+	case SRL: {
+		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with SRL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Shift right
+		byte old = arg1.r8();
+		byte res = old >> 1;
+		arg1.w8(res);
+		//Flags
+		Zflag(res == 0);
+		Nflag(0);
+		Hflag(0);
+		Cflag(old[0]);
+
+		return true;
+	}
+	case BIT: {
+		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
+		{
+			error("One or more arguments type incompatible with BIT instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		unsigned short bit = ( arg1.r8() & (byte)0x7 ).to_ulong();
+
+		//Flags
+		Zflag( !(arg2.r8()[bit]) );
+		Nflag(0);
+		Hflag(1);
+		//Cflag not affected
+
+		return true;
+	}
+	case SET: {
+		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
+		{
+			error("One or more arguments type incompatible with SET instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
+		byte res = arg2.r8();
+		res[bit] = 1;
+
+		arg2.w8(res);
+
+		return true;
+	}
+	case RES: {
+		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
+		{
+			error("One or more arguments type incompatible with RES instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
+		byte res = arg2.r8();
+		res[bit] = 0;
+
+		arg2.w8(res);
+
+		return true;
+	}
+	case JP: {
+		if( (arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address) ) || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JP instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		PC = arg1.r16();
+
+		return true;
+	}
+	case JPNZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JP(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if(!Zflag())
+			PC = arg1.r16();
+
+		return true;
+	}
+	case JPZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JP(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Zflag())
+			PC = arg1.r16();
+
+		return true;
+	}
+	case JPNC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JP(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Cflag())
+			PC = arg1.r16();
+
+		return true;
+	}
+	case JPC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JP(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Cflag())
+			PC = arg1.r16();
+
+		return true;
+	}
+	case JR: {
+		if (arg1.type != IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JR instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Cflag())
+			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+
+		return true;
+	}
+	case JRNZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JR(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Zflag())
+			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+
+		return true;
+	}
+	case JRZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JR(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Zflag())
+			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+
+		return true;
+	}
+	case JRNC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JR(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Cflag())
+			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+
+		return true;
+	}
+	case JRC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with JR(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Cflag())
+			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+
+		return true;
+	}
+	case CALL: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CALL instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Push
+		word savedPC = PC.to_ulong() + 1;
+		data stack = SP.to_ulong();
+		//Copy
+		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+		ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+		//Decrement
+		SP = SP.to_ulong() - 2;
+
+		//Jump
+		PC = arg1.r16();
+
+		return true;
+	}
+	case CALLNZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CALL(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Zflag())
+		{
+			//Push
+			word savedPC = PC.to_ulong() + 1;
+			data stack = SP.to_ulong();
+			//Copy
+			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+			//Decrement
+			SP = SP.to_ulong() - 2;
+
+			//Jump
+			PC = arg1.r16();
+		}
+
+		return true;
+	}
+	case CALLZ: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CALL(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Zflag())
+		{
+			//Push
+			word savedPC = PC.to_ulong() + 1;
+			data stack = SP.to_ulong();
+			//Copy
+			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+			//Decrement
+			SP = SP.to_ulong() - 2;
+
+			//Jump
+			PC = arg1.r16();
+		}
+
+		return true;
+	}
+	case CALLNC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CALL(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Cflag())
+		{
+			//Push
+			word savedPC = PC.to_ulong() + 1;
+			data stack = SP.to_ulong();
+			//Copy
+			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+			//Decrement
+			SP = SP.to_ulong() - 2;
+
+			//Jump
+			PC = arg1.r16();
+		}
+
+		return true; 
+	}
+	case CALLC: {
+		if (arg1.type != W_IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with CALL(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Cflag())
+		{
+			//Push
+			word savedPC = PC.to_ulong() + 1;
+			data stack = SP.to_ulong();
+			//Copy
+			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+			//Decrement
+			SP = SP.to_ulong() - 2;
+
+			//Jump
+			PC = arg1.r16();
+		}
+
+		return true;
+	}
+	case RST: {
+		if (arg1.type != IMM || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RST instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Push
+		word savedPC = PC;
+		data stack = SP.to_ulong();
+		//Copy
+		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
+		ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
+		//Decrement
+		SP = SP.to_ulong() - 2;
+
+		//Jump
+		PC = arg1.r8().to_ulong();
+
+		return true;
+	}
+	case RET: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Pop
+		data stack = SP.to_ulong();
+		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+		//Increment
+		SP = SP.to_ulong() + 2;
+		
+		return true;
+	}
+	case RETNZ: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Zflag())
+		{
+			//Pop
+			data stack = SP.to_ulong();
+			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			//Increment
+			SP = SP.to_ulong() + 2;
+		}
+
+		return true;
+	}
+	case RETZ: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET(Z) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Zflag())
+		{
+			//Pop
+			data stack = SP.to_ulong();
+			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			//Increment
+			SP = SP.to_ulong() + 2;
+		}
+
+		return true;
+	}
+	case RETNC: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET(NC) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (!Cflag())
+		{
+			//Pop
+			data stack = SP.to_ulong();
+			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			//Increment
+			SP = SP.to_ulong() + 2;
+		}
+
+		return true;
+	}
+	case RETC: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET(C) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		if (Cflag())
+		{
+			//Pop
+			data stack = SP.to_ulong();
+			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			//Increment
+			SP = SP.to_ulong() + 2;
+		}
+
+		return true;
+	}
+	case RETI: {
+		if (arg1.type != NONE || arg2.type != NONE)
+		{
+			error("One or more arguments type incompatible with RET(NZ) instruction at " + PC.to_string() + ": " + (string)arg1 + "," + (string)arg2);
+			return false;
+		}
+
+		//Pop
+		data stack = SP.to_ulong();
+		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+		//Increment
+		SP = SP.to_ulong() + 2;
+		
+		//TODO implement EI
+
+		return true;
+	}
 	default: {
-		error("Invalid instruction: " + cmd);
+		error("Invalid instruction at " + PC.to_string() + ": " + to_string(cmd));
 		return false;
 		break;
 	}
