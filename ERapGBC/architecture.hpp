@@ -54,8 +54,10 @@ enum ArgType {
 	// Word types
 	W_REG,			/* Word register */
 	C_REG,			/* Combined register */
-	W_IMM,			/* Immediate word */
+	W_IMM			/* Immediate word */
 };
+
+const string arg_codes[] = { "NONE", "IMM", "REG", "W_REG", "C_REG", "W_IMM" };
 
 //Reference to the actual argument, depends on the type
 union ArgValue {
@@ -142,7 +144,7 @@ struct Argument {
 	}
 
 	//Define cast to string for printing
-	operator string() const { return "[Type: "+to_string(type)+"; Address: "+to_string(address)+"]"; }
+	operator string() const { return "[Type: "+ arg_codes[type] +"; Addr: " + (address ? "Y" : "N" ) +"]"; }
 };
 
 enum Command {
@@ -164,6 +166,16 @@ enum Command {
 	RET, RETNZ, RETZ, RETNC, RETC, RETI,
 	RST,
 	ERR
+};
+
+const string cmd_codes[] =
+{	"LD", "LDD", "LDI", "LDH", "LDHL", "PUSH", "POP", "ADD", "ADC",
+	"SUB", "SBC", "AND", "OR", "XOR", "CP", "CPL", "INC", "DEC", "SWAP",
+	"DAA", "CCF", "SCF", "NOP", "HALT", "STOP", "DI", "EI", "RLCA", "RLA",
+	"RRCA", "RRA", "RLC", "RL", "RRC", "RR", "SLA", "SRA", "SRL", "BIT", "SET",
+	"RES", "JP", "JP(NZ)", "JP(Z)", "JP(NC)", "JP(C)", "JR", "JR(NZ)", "JR(Z)", "JR(NC)", "JR(C)",
+	"CALL", "CALL(NZ)", "CALL(Z)", "CALL(NC)", "CALL(C)", "RET", "RET(NZ)", "RET(Z)", "RET(NC)",
+	"RET(C)", "RETI", "RST", "ERR"
 };
 
 class Instruction {
@@ -188,7 +200,7 @@ public:
 	}
 
 	//Define cast to string for printing
-	operator string() const { return "{Command: " + to_string(cmd) + "; Arg1: " + (string)arg1 + "; Arg2: " + (string)arg2 + "}"; }
+	operator string() const { return "{Command: " + cmd_codes[cmd] + "; Arg1: " + (string)arg1 + "; Arg2: " + (string)arg2 + "}"; }
 };
 
 Instruction disasm(data address);

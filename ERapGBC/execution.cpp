@@ -1485,7 +1485,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 	}
 	default: {
 		printf("%#.4x | ", PC.to_ulong());
-		error("Invalid instruction: " + to_string(cmd));
+		error("Invalid instruction: " + cmd_codes[cmd]);
 		return false;
 		break;
 	}
