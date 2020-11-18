@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include "win_color.h"
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 using std::cout;
 using std::endl;
 
@@ -21,4 +23,13 @@ void warning(string str)
 void debug(string str)
 {
 	cout << "D> " << str << endl;
+}
+
+string to_hex(unsigned long i)
+{
+	std::stringstream stream;
+	stream << "0x"
+		<< std::setfill('0') << std::setw(4)
+		<< std::hex << i;
+	return stream.str();
 }

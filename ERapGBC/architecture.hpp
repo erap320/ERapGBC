@@ -16,6 +16,9 @@ typedef bitset<WORD_SIZE> word;
 //Because it's the default smallest numeric type in which a bitset exports numbers
 typedef unsigned long data;
 
+//Forward definition
+class Architecture;
+
 //Word registers composed of 2 byte registers
 //The class allows to read and write directly from/to the two base registers
 class CombinedRegister {
@@ -137,14 +140,37 @@ struct Argument {
 	void copy(Argument& other)
 	{
 		//Size of the two arguments should always be the same
-		if (this->type >= W_REG || other.type >= W_REG) //All 16 bit types come after W_REG
+		if ( (this->type >= W_REG && !this->address) || (other.type >= W_REG && !other.address) ) //All 16 bit types come after W_REG
 			this->w16(other.r16());
 		else
 			this->w8(other.r8());
 	}
 
 	//Define cast to string for printing
-	operator string() const { return "[Type: "+ arg_codes[type] +"; Addr: " + (address ? "Y" : "N" ) +"]"; }
+	operator string() const {
+		string result = "[";
+
+		switch (type)
+		{
+		case IMM:
+		case W_IMM: {
+			if (address)
+				result += "(";
+
+			result += "Value: ";
+			result += to_hex(value.immediate);
+			
+			if (address)
+				result += ")";
+
+			result += " ";
+			break;
+		}
+		}
+
+		result += "Type: "+ arg_codes[type] +"; Addr: " + (address ? "Y" : "N" ) +"]";
+		return result;
+	}
 };
 
 enum Command {
@@ -217,9 +243,9 @@ public:
 		}
 
 		//Don't consider immediate values for the RST command
-		//Since different opcodes are simulated using an immediate
+		//since different opcodes are simulated using an immediate
 		//value
-		if (cmd == RST)
+		if(cmd == BIT || cmd == SET || cmd == RES || cmd == RST)
 			return len;
 
 		//Additional bytes for immediate values
@@ -246,10 +272,11 @@ class Architecture
 {
 	static Architecture* singleton;
 
+	Architecture();
+
 public:
 	byte A, F, B, C, D, E, H, L;
-	word PC = 0x100;
-	word SP = 0xFFFE;
+	word PC, SP;
 
 	// Combined registers definitions
 	CombinedRegister AF = { &A, &F };
@@ -286,6 +313,12 @@ public:
 	
 	//Print the first elements of the stack in the terminal
 	void print_stack(unsigned int rows);
+
+	//Print a number of memory cells
+	void print_ram(data address, unsigned int rows);
+
+	//Print a human readable instruction
+	void print_instruction(data address, Instruction instr);
 
 	static Architecture* instance()
 	{

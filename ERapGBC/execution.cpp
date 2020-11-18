@@ -14,7 +14,7 @@ byte Argument::r8()
 			break;
 		}
 		case IMM: {
-			return Architecture::instance()->ram[0xff00 + value.immediate & 0xff];
+			return Architecture::instance()->ram[0xff00 + (value.immediate & 0xff)];
 			break;
 		}
 		case REG: {
@@ -85,23 +85,63 @@ void Argument::w8(byte val)
 			break;
 		}
 		case IMM: {
-			Architecture::instance()->ram[0xff00 + value.immediate & 0xff] = val;
+			data address = 0xff00 + (value.immediate & 0xff);
+			Architecture::instance()->ram[address] = val;
+
+			//RAM echo emulation
+			if (address >= 0xE000 && address <= 0xFE00)
+				Architecture::instance()->ram[address - 0x2000] = val;
+			else if (address >= 0xC000 && address <= 0xDE00)
+				Architecture::instance()->ram[address + 0x2000] = val;
+			
 			break;
 		}
 		case REG: {
-			Architecture::instance()->ram[0xff00 + value.reg->to_ulong()] = val;
+			data address = 0xff00 + value.reg->to_ulong();
+			Architecture::instance()->ram[address] = val;
+
+			//RAM echo emulation
+			if (address >= 0xE000 && address <= 0xFE00)
+				Architecture::instance()->ram[address - 0x2000] = val;
+			else if (address >= 0xC000 && address <= 0xDE00)
+				Architecture::instance()->ram[address + 0x2000] = val;
+
 			break;
 		}
 		case W_REG: {
-			Architecture::instance()->ram[value.w_reg->to_ulong()] = val;
+			data address = value.w_reg->to_ulong();
+			Architecture::instance()->ram[address] = val;
+
+			//RAM echo emulation
+			if (address >= 0xE000 && address <= 0xFE00)
+				Architecture::instance()->ram[address - 0x2000] = val;
+			else if (address >= 0xC000 && address <= 0xDE00)
+				Architecture::instance()->ram[address + 0x2000] = val;
+
 			break;
 		}
 		case C_REG: {
-			Architecture::instance()->ram[((word)*value.c_reg).to_ulong()] = val;
+			data address = ((word)*value.c_reg).to_ulong();
+			Architecture::instance()->ram[address] = val;
+
+			//RAM echo emulation
+			if (address >= 0xE000 && address <= 0xFE00)
+				Architecture::instance()->ram[address - 0x2000] = val;
+			else if (address >= 0xC000 && address <= 0xDE00)
+				Architecture::instance()->ram[address + 0x2000] = val;
+
 			break;
 		}
 		case W_IMM: {
-			Architecture::instance()->ram[value.immediate & 0xffff] = val;
+			data address = value.immediate & 0xffff;
+			Architecture::instance()->ram[address] = val;
+
+			//RAM echo emulation
+			if (address >= 0xE000 && address <= 0xFE00)
+				Architecture::instance()->ram[address - 0x2000] = val;
+			else if (address >= 0xC000 && address <= 0xDE00)
+				Architecture::instance()->ram[address + 0x2000] = val;
+
 			break;
 		}
 		default: {
@@ -154,7 +194,7 @@ word Argument::r16()
 		}
 		case IMM: {
 			Architecture* arch = Architecture::instance();
-			data addr = 0xff00 + value.immediate & 0xff;
+			data addr = 0xff00 + (value.immediate & 0xff);
 			return word(arch->ram[addr].to_string() + arch->ram[addr + 1].to_string());
 			break;
 		}
@@ -238,9 +278,24 @@ void Argument::w16(word val)
 		}
 		case IMM: {
 			Architecture* arch = Architecture::instance();
-			data addr = 0xff00 + value.immediate & 0xff;
+			data addr = 0xff00 + (value.immediate & 0xff);
 			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
 			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+
+			//RAM echo emulation
+			if (addr >= 0xE000 && addr <= 0xFE00)
+			{
+				addr -= 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+			else if (addr >= 0xC000 && addr <= 0xDE00)
+			{
+				addr += 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+
 			break;
 		}
 		case REG: {
@@ -248,6 +303,21 @@ void Argument::w16(word val)
 			data addr = 0xff00 + value.reg->to_ulong();
 			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
 			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+
+			//RAM echo emulation
+			if (addr >= 0xE000 && addr <= 0xFE00)
+			{
+				addr -= 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+			else if (addr >= 0xC000 && addr <= 0xDE00)
+			{
+				addr += 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+
 			break;
 		}
 		case W_REG: {
@@ -255,6 +325,21 @@ void Argument::w16(word val)
 			data addr = value.w_reg->to_ulong();
 			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
 			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+
+			//RAM echo emulation
+			if (addr >= 0xE000 && addr <= 0xFE00)
+			{
+				addr -= 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+			else if (addr >= 0xC000 && addr <= 0xDE00)
+			{
+				addr += 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+
 			break;
 		}
 		case C_REG: {
@@ -262,6 +347,21 @@ void Argument::w16(word val)
 			data addr = ((word)*value.c_reg).to_ulong();
 			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
 			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+
+			//RAM echo emulation
+			if (addr >= 0xE000 && addr <= 0xFE00)
+			{
+				addr -= 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+			else if (addr >= 0xC000 && addr <= 0xDE00)
+			{
+				addr += 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+
 			break;
 		}
 		case W_IMM: {
@@ -269,6 +369,21 @@ void Argument::w16(word val)
 			data addr = value.immediate & 0xffff;
 			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
 			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+
+			//RAM echo emulation
+			if (addr >= 0xE000 && addr <= 0xFE00)
+			{
+				addr -= 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+			else if (addr >= 0xC000 && addr <= 0xDE00)
+			{
+				addr += 0x2000;
+				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
+				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
+			}
+
 			break;
 		}
 		default: {
@@ -346,7 +461,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			//Copy
 			arg1.copy(arg2);
 			//Decrement
-			arg2.w16(arg2.r16().to_ulong() - 1);
+			*(arg1.value.c_reg) = ((word) * (arg1.value.c_reg)).to_ulong() - 1;
 			return true;
 		}
 		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
@@ -354,7 +469,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			//Copy
 			arg1.copy(arg2);
 			//Decrement
-			arg1.w16(arg1.r16().to_ulong() - 1);
+			*(arg2.value.c_reg) = ((word) * (arg2.value.c_reg)).to_ulong() - 1;
 			return true;
 		}
 		else
@@ -371,7 +486,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			//Copy
 			arg1.copy(arg2);
 			//Decrement
-			arg2.w16(arg2.r16().to_ulong() + 1);
+			*(arg1.value.c_reg) = ((word) * (arg1.value.c_reg)).to_ulong() + 1;
 			return true;
 		}
 		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
@@ -379,7 +494,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			//Copy
 			arg1.copy(arg2);
 			//Decrement
-			arg1.w16(arg1.r16().to_ulong() + 1);
+			*(arg2.value.c_reg) = ((word) * (arg2.value.c_reg)).to_ulong() + 1;
 			return true;
 		}
 		else
@@ -487,6 +602,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case ADC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
@@ -505,6 +621,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(res > 0xff);
 
 		return true;
+		break;
 	}
 	case SUB: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -523,6 +640,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A[7] != 0 || arg1.r8()[7] != 1);
 
 		return true;
+		break;
 	}
 	case SBC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
@@ -541,6 +659,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(arg1.r8()[7] != 0 || arg2.r8()[7] != 1);
 
 		return true;
+		break;
 	}
 	case AND: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -559,6 +678,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(0);
 
 		return true;
+		break;
 	}
 	case OR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -577,6 +697,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(0);
 
 		return true;
+		break;
 	}
 	case XOR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -595,6 +716,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(0);
 
 		return true;
+		break;
 	}
 	case CP: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -610,6 +732,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A.to_ulong() < arg1.r8().to_ulong());
 
 		return true;
+		break;
 	}
 	case INC: {
 		if (arg1.type == NONE || arg2.type != NONE)
@@ -619,14 +742,19 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Increase
-		data res = arg1.r8().to_ulong() + 1;
+		data res;
 		switch (arg1.type)
 		{
-		case REG:
+		case REG: {
+			res = arg1.r8().to_ulong() + 1;
 			arg1.w8(res & 0xff);
+			break;
+		}
 		case W_REG:
 		case C_REG:
+			res = arg1.r16().to_ulong() + 1;
 			arg1.w16(res & 0xffff);
+			break;
 		}
 		//Flags
 		if (arg1.type == REG)
@@ -638,6 +766,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Cflag unaffected
 
 		return true;
+		break;
 	}
 	case DEC: {
 		if (arg1.type == NONE || arg2.type != NONE)
@@ -647,15 +776,22 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Decrease
-		data res = arg1.r8().to_ulong() - 1;
+		data res;
 		switch (arg1.type)
 		{
-		case REG:
+		case REG: {
+			res = arg1.r8().to_ulong() - 1;
 			arg1.w8(res & 0xff);
-		case W_REG:
-		case C_REG:
-			arg1.w16(res & 0xffff);
+			break;
 		}
+		case W_REG:
+		case C_REG: {
+			res = arg1.r16().to_ulong() - 1;
+			arg1.w16(res & 0xffff);
+			break;
+		}
+		}
+
 		//Flags
 		Zflag(res == 0);
 		if (arg1.type == REG)
@@ -668,6 +804,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Cflag unaffected
 
 		return true;
+		break;
 	}
 	case SWAP: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -688,6 +825,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(0);
 
 		return true;
+		break;
 	}
 	case DAA: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -699,7 +837,14 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//TODO implement DAA
 		warning("DAA not implemented yet");
 
+		//Flags
+		Zflag(A == 0);
+		//Nflag not affected;
+		Hflag(0);
+		//TODO Cflag
+
 		return true;
+		break;
 	}
 	case CPL: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -717,6 +862,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Cflag not affected
 
 		return true;
+		break;
 	}
 	case CCF: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -732,6 +878,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(!Cflag());
 
 		return true;
+		break;
 	}
 	case SCF: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -747,6 +894,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(1);
 
 		return true;
+		break;
 	}
 	case NOP: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -758,6 +906,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Nothing :)
 
 		return true;
+		break;
 	}
 	case HALT: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -771,6 +920,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		warning("HALT not implemented yet");
 
 		return true;
+		break;
 	}
 	case STOP: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -784,6 +934,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		warning("STOP not implemented yet");
 
 		return true;
+		break;
 	}
 	case DI: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -797,6 +948,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		warning("DI not implemented yet");
 
 		return true;
+		break;
 	}
 	case EI: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -810,6 +962,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		warning("EI not implemented yet");
 
 		return true;
+		break;
 	}
 	case RLCA: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -829,6 +982,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A[7]);
 
 		return true;
+		break;
 	}
 	case RLA: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -848,6 +1002,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A[7]);
 
 		return true;
+		break;
 	}
 	case RRCA: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -867,6 +1022,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A[0]);
 
 		return true;
+		break;
 	}
 	case RRA: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -886,6 +1042,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(A[0]);
 
 		return true;
+		break;
 	}
 	case RLC: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -906,6 +1063,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[7]);
 
 		return true;
+		break;
 	}
 	case RL: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -926,6 +1084,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[7]);
 
 		return true;
+		break;
 	}
 	case RRC: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -946,6 +1105,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[0]);
 
 		return true;
+		break;
 	}
 	case RR: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -966,6 +1126,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[0]);
 
 		return true;
+		break;
 	}
 	case SLA: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -985,6 +1146,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[7]);
 
 		return true;
+		break;
 	}
 	case SRA: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -1005,6 +1167,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[0]);
 
 		return true;
+		break;
 	}
 	case SRL: {
 		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
@@ -1024,6 +1187,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		Cflag(old[0]);
 
 		return true;
+		break;
 	}
 	case BIT: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
@@ -1041,6 +1205,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Cflag not affected
 
 		return true;
+		break;
 	}
 	case SET: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
@@ -1056,6 +1221,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		arg2.w8(res);
 
 		return true;
+		break;
 	}
 	case RES: {
 		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
@@ -1071,6 +1237,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		arg2.w8(res);
 
 		return true;
+		break;
 	}
 	case JP: {
 		if ((arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address)) || arg2.type != NONE)
@@ -1082,6 +1249,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case JPNZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1094,6 +1262,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case JPZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1106,6 +1275,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case JPNC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1118,6 +1288,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case JPC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1130,6 +1301,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case JR: {
 		if (arg1.type != IMM || arg2.type != NONE)
@@ -1138,58 +1310,75 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
-		if (Cflag())
-			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+		signed char delta = arg1.r8().to_ulong();
+		PC = PC.to_ulong() + delta;
 
 		return true;
+		break;
 	}
 	case JRNZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
+		if (arg1.type != IMM || arg2.type != NONE)
 		{
 			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
 			return false;
 		}
 
 		if (!Zflag())
-			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+		{
+			signed char delta = arg1.r8().to_ulong();
+			PC = PC.to_ulong() + delta;
+		}
 
 		return true;
+		break;
 	}
 	case JRZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
+		if (arg1.type != IMM || arg2.type != NONE)
 		{
 			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
 			return false;
 		}
 
 		if (Zflag())
-			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+		{
+			signed char delta = arg1.r8().to_ulong();
+			PC = PC.to_ulong() + delta;
+		}
 
 		return true;
+		break;
 	}
 	case JRNC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
+		if (arg1.type != IMM || arg2.type != NONE)
 		{
 			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
 			return false;
 		}
 
 		if (!Cflag())
-			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+		{
+			signed char delta = arg1.r8().to_ulong();
+			PC = PC.to_ulong() + delta;
+		}
 
 		return true;
+		break;
 	}
 	case JRC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
+		if (arg1.type != IMM || arg2.type != NONE)
 		{
 			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
 			return false;
 		}
 
 		if (Cflag())
-			PC = PC.to_ulong() + (arg1.r16().to_ulong() & 0xffff);
+		{
+			signed char delta = arg1.r8().to_ulong();
+			PC = PC.to_ulong() + delta;
+		}
 
 		return true;
+		break;
 	}
 	case CALL: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1199,7 +1388,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Push
-		word savedPC = PC.to_ulong() + 1;
+		word savedPC = PC.to_ulong() + 3; //Because the CALL instruction is 3 bytes long
 		data stack = SP.to_ulong();
 		//Copy
 		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
@@ -1211,6 +1400,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		PC = arg1.r16();
 
 		return true;
+		break;
 	}
 	case CALLNZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1235,6 +1425,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case CALLZ: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1259,6 +1450,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case CALLNC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1283,6 +1475,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case CALLC: {
 		if (arg1.type != W_IMM || arg2.type != NONE)
@@ -1307,6 +1500,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case RST: {
 		if (arg1.type != IMM || arg2.type != NONE)
@@ -1328,6 +1522,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		PC = arg1.r8().to_ulong();
 
 		return true;
+		break;
 	}
 	case RET: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1343,6 +1538,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		SP = SP.to_ulong() + 2;
 
 		return true;
+		break;
 	}
 	case RETNZ: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1361,6 +1557,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case RETZ: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1379,6 +1576,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case RETNC: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1397,6 +1595,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case RETC: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1415,6 +1614,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		return true;
+		break;
 	}
 	case RETI: {
 		if (arg1.type != NONE || arg2.type != NONE)
@@ -1433,6 +1633,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		warning("EI in RETI not implemented yet");
 
 		return true;
+		break;
 	}
 	default: {
 		error("Invalid instruction: " + cmd_codes[cmd]);
@@ -1448,25 +1649,22 @@ bool Architecture::step(bool debug)
 	data address = PC.to_ulong();
 	Instruction instr = disasm(address);
 
-	if (debug)
-		for (int i = 0; i < 50; i++) cout << endl;
+	//Increase program counter
+	PC = (address + instr.length()) & 0xffff;
 
 	//Execute
 	bool result = exec(instr);
 
 	if (debug || !result)
 	{
-		cout << "\n################ INSTRUCTION ################\n";
-		printf("%#.4x | ", address);
-		cout << (string)instr << endl;
+		print_instruction(address, instr);
 
 		print_registers();
 
 		print_stack(5);
-	}
 
-	//Increase program counter
-	PC = (address + instr.length()) & 0xffff;
+		print_instruction(PC.to_ulong(), disasm(PC.to_ulong()));
+	}
 
 	return result;
 }

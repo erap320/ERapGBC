@@ -625,6 +625,9 @@ Instruction disasm(data address)
 		opcode = a->ram[address + 1].to_ulong();
 		switch(opcode)
 		{
+		default:
+			return Instruction{ ERR, Argument{NONE}, Argument{NONE} };
+			break;
 		case 0x37:
 			return Instruction{ SWAP, Argument{a->A}, Argument{NONE} };
 			break;
@@ -818,78 +821,583 @@ Instruction disasm(data address)
 			return Instruction{ SRL, Argument{a->HL, ADDR}, Argument{NONE} };
 			break;
 		case 0x47:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->A} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->A} };
 			break;
 		case 0x40:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->B} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->B} };
 			break;
 		case 0x41:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->C} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->C} };
 			break;
 		case 0x42:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->D} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->D} };
 			break;
 		case 0x43:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->E} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->E} };
 			break;
 		case 0x44:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->H} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->H} };
 			break;
 		case 0x45:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->L} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->L} };
 			break;
 		case 0x46:
-			return Instruction{ BIT, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->HL, ADDR} };
+			return Instruction{ BIT, Argument{0, IMM}, Argument{a->HL, ADDR} };
 			break;
-		case 0xC7:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->A} };
+		/*case 0x1F:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->A} };
+			break;*/
+		case 0x48:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->B} };
 			break;
-		case 0xC0:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->B} };
+		case 0x49:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->C} };
 			break;
-		case 0xC1:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->C} };
+		case 0x4A:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->D} };
 			break;
-		case 0xC2:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->D} };
+		case 0x4B:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->E} };
 			break;
-		case 0xC3:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->E} };
+		case 0x4C:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->H} };
 			break;
-		case 0xC4:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->H} };
+		case 0x4D:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->L} };
 			break;
-		case 0xC5:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->L} };
+		case 0x4E:
+			return Instruction{ BIT, Argument{1, IMM}, Argument{a->HL, ADDR} };
 			break;
-		case 0xC6:
-			return Instruction{ SET, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->HL, ADDR} };
+		case 0x57:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->A} };
+			break;
+		case 0x50:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->B} };
+			break;
+		case 0x51:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->C} };
+			break;
+		case 0x52:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->D} };
+			break;
+		case 0x53:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->E} };
+			break;
+		case 0x54:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->H} };
+			break;
+		case 0x55:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->L} };
+			break;
+		case 0x56:
+			return Instruction{ BIT, Argument{2, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x5F:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->A} };
+			break;
+		case 0x58:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->B} };
+			break;
+		case 0x59:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->C} };
+			break;
+		case 0x5A:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->D} };
+			break;
+		case 0x5B:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->E} };
+			break;
+		case 0x5C:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->H} };
+			break;
+		case 0x5D:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->L} };
+			break;
+		case 0x5E:
+			return Instruction{ BIT, Argument{3, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x67:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->A} };
+			break;
+		case 0x60:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->B} };
+			break;
+		case 0x61:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->C} };
+			break;
+		case 0x62:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->D} };
+			break;
+		case 0x63:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->E} };
+			break;
+		case 0x64:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->H} };
+			break;
+		case 0x65:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->L} };
+			break;
+		case 0x66:
+			return Instruction{ BIT, Argument{4, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x6F:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->A} };
+			break;
+		case 0x68:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->B} };
+			break;
+		case 0x69:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->C} };
+			break;
+		case 0x6A:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->D} };
+			break;
+		case 0x6B:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->E} };
+			break;
+		case 0x6C:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->H} };
+			break;
+		case 0x6D:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->L} };
+			break;
+		case 0x6E:
+			return Instruction{ BIT, Argument{5, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x77:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->A} };
+			break;
+		case 0x70:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->B} };
+			break;
+		case 0x71:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->C} };
+			break;
+		case 0x72:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->D} };
+			break;
+		case 0x73:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->E} };
+			break;
+		case 0x74:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->H} };
+			break;
+		case 0x75:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->L} };
+			break;
+		case 0x76:
+			return Instruction{ BIT, Argument{6, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x7F:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->A} };
+			break;
+		case 0x78:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->B} };
+			break;
+		case 0x79:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->C} };
+			break;
+		case 0x7A:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->D} };
+			break;
+		case 0x7B:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->E} };
+			break;
+		case 0x7C:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->H} };
+			break;
+		case 0x7D:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->L} };
+			break;
+		case 0x7E:
+			return Instruction{ BIT, Argument{7, IMM}, Argument{a->HL, ADDR} };
 			break;
 		case 0x87:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->A} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->A} };
 			break;
 		case 0x80:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->B} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->B} };
 			break;
 		case 0x81:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->C} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->C} };
 			break;
 		case 0x82:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->D} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->D} };
 			break;
 		case 0x83:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->E} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->E} };
 			break;
 		case 0x84:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->H} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->H} };
 			break;
 		case 0x85:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->L} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->L} };
 			break;
 		case 0x86:
-			return Instruction{ RES, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{a->HL, ADDR} };
+			return Instruction{ RES, Argument{0, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x8F:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->A} };
+			break;
+		case 0x88:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->B} };
+			break;
+		case 0x89:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->C} };
+			break;
+		case 0x8A:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->D} };
+			break;
+		case 0x8B:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->E} };
+			break;
+		case 0x8C:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->H} };
+			break;
+		case 0x8D:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->L} };
+			break;
+		case 0x8E:
+			return Instruction{ RES, Argument{1, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x97:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->A} };
+			break;
+		case 0x90:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->B} };
+			break;
+		case 0x91:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->C} };
+			break;
+		case 0x92:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->D} };
+			break;
+		case 0x93:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->E} };
+			break;
+		case 0x94:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->H} };
+			break;
+		case 0x95:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->L} };
+			break;
+		case 0x96:
+			return Instruction{ RES, Argument{2, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0x9F:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->A} };
+			break;
+		case 0x98:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->B} };
+			break;
+		case 0x99:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->C} };
+			break;
+		case 0x9A:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->D} };
+			break;
+		case 0x9B:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->E} };
+			break;
+		case 0x9C:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->H} };
+			break;
+		case 0x9D:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->L} };
+			break;
+		case 0x9E:
+			return Instruction{ RES, Argument{3, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xA7:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->A} };
+			break;
+		case 0xA0:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->B} };
+			break;
+		case 0xA1:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->C} };
+			break;
+		case 0xA2:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->D} };
+			break;
+		case 0xA3:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->E} };
+			break;
+		case 0xA4:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->H} };
+			break;
+		case 0xA5:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->L} };
+			break;
+		case 0xA6:
+			return Instruction{ RES, Argument{4, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xAF:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->A} };
+			break;
+		case 0xA8:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->B} };
+			break;
+		case 0xA9:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->C} };
+			break;
+		case 0xAA:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->D} };
+			break;
+		case 0xAB:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->E} };
+			break;
+		case 0xAC:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->H} };
+			break;
+		case 0xAD:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->L} };
+			break;
+		case 0xAE:
+			return Instruction{ RES, Argument{5, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xB7:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->A} };
+			break;
+		case 0xB0:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->B} };
+			break;
+		case 0xB1:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->C} };
+			break;
+		case 0xB2:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->D} };
+			break;
+		case 0xB3:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->E} };
+			break;
+		case 0xB4:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->H} };
+			break;
+		case 0xB5:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->L} };
+			break;
+		case 0xB6:
+			return Instruction{ RES, Argument{6, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xBF:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->A} };
+			break;
+		case 0xB8:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->B} };
+			break;
+		case 0xB9:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->C} };
+			break;
+		case 0xBA:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->D} };
+			break;
+		case 0xBB:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->E} };
+			break;
+		case 0xBC:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->H} };
+			break;
+		case 0xBD:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->L} };
+			break;
+		case 0xBE:
+			return Instruction{ RES, Argument{7, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xC7:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->A} };
+			break;
+		case 0xC0:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->B} };
+			break;
+		case 0xC1:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->C} };
+			break;
+		case 0xC2:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->D} };
+			break;
+		case 0xC3:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->E} };
+			break;
+		case 0xC4:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->H} };
+			break;
+		case 0xC5:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->L} };
+			break;
+		case 0xC6:
+			return Instruction{ SET, Argument{0, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xCF:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->A} };
+			break;
+		case 0xC8:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->B} };
+			break;
+		case 0xC9:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->C} };
+			break;
+		case 0xCA:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->D} };
+			break;
+		case 0xCB:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->E} };
+			break;
+		case 0xCC:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->H} };
+			break;
+		case 0xCD:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->L} };
+			break;
+		case 0xCE:
+			return Instruction{ SET, Argument{1, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xD7:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->A} };
+			break;
+		case 0xD0:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->B} };
+			break;
+		case 0xD1:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->C} };
+			break;
+		case 0xD2:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->D} };
+			break;
+		case 0xD3:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->E} };
+			break;
+		case 0xD4:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->H} };
+			break;
+		case 0xD5:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->L} };
+			break;
+		case 0xD6:
+			return Instruction{ SET, Argument{2, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xDF:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->A} };
+			break;
+		case 0xD8:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->B} };
+			break;
+		case 0xD9:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->C} };
+			break;
+		case 0xDA:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->D} };
+			break;
+		case 0xDB:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->E} };
+			break;
+		case 0xDC:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->H} };
+			break;
+		case 0xDD:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->L} };
+			break;
+		case 0xDE:
+			return Instruction{ SET, Argument{3, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xE7:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->A} };
+			break;
+		case 0xE0:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->B} };
+			break;
+		case 0xE1:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->C} };
+			break;
+		case 0xE2:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->D} };
+			break;
+		case 0xE3:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->E} };
+			break;
+		case 0xE4:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->H} };
+			break;
+		case 0xE5:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->L} };
+			break;
+		case 0xE6:
+			return Instruction{ SET, Argument{4, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xEF:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->A} };
+			break;
+		case 0xE8:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->B} };
+			break;
+		case 0xE9:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->C} };
+			break;
+		case 0xEA:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->D} };
+			break;
+		case 0xEB:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->E} };
+			break;
+		case 0xEC:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->H} };
+			break;
+		case 0xED:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->L} };
+			break;
+		case 0xEE:
+			return Instruction{ SET, Argument{5, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xF7:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->A} };
+			break;
+		case 0xF0:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->B} };
+			break;
+		case 0xF1:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->C} };
+			break;
+		case 0xF2:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->D} };
+			break;
+		case 0xF3:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->E} };
+			break;
+		case 0xF4:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->H} };
+			break;
+		case 0xF5:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->L} };
+			break;
+		case 0xF6:
+			return Instruction{ SET, Argument{6, IMM}, Argument{a->HL, ADDR} };
+			break;
+		case 0xFF:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->A} };
+			break;
+		case 0xF8:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->B} };
+			break;
+		case 0xF9:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->C} };
+			break;
+		case 0xFA:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->D} };
+			break;
+		case 0xFB:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->E} };
+			break;
+		case 0xFC:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->H} };
+			break;
+		case 0xFD:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->L} };
+			break;
+		case 0xFE:
+			return Instruction{ SET, Argument{7, IMM}, Argument{a->HL, ADDR} };
 			break;
 		}
+		break;
 	}
 	case 0x27:
 		return Instruction{ DAA, Argument{NONE}, Argument{NONE} };
