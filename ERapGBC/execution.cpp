@@ -1498,6 +1498,9 @@ bool Architecture::step(bool debug)
 	data address = PC.to_ulong();
 	Instruction instr = disasm(address);
 
+	if (debug)
+		for (int i = 0; i < 50; i++) cout << endl;
+
 	//Execute
 	bool result = exec(instr);
 
