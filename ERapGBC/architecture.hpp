@@ -148,7 +148,7 @@ struct Argument {
 enum Command {
 	LD, LDD, LDI, LDH, LDHL,
 	PUSH, POP,
-	ADD, ADC, SUB, SUBC,
+	ADD, ADC, SUB, SBC,
 	AND, OR, XOR, CP, CPL,
 	INC, DEC,
 	SWAP, DAA,

@@ -375,5 +375,212 @@ Instruction disasm(data address)
 	case 0xCE:
 		return Instruction{ ADC, Argument{a->A}, Argument{a->ram[address + 1].to_ulong(), IMM}, 2 };
 		break;
+	case 0x97:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->A}, 1 };
+		break;
+	case 0x90:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->B}, 1 };
+		break;
+	case 0x91:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->C}, 1 };
+		break;
+	case 0x92:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->D}, 1 };
+		break;
+	case 0x93:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->E}, 1 };
+		break;
+	case 0x94:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->H}, 1 };
+		break;
+	case 0x95:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->L}, 1 };
+		break;
+	case 0x96:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->HL, ADDR}, 1 };
+		break;
+	case 0xD6:
+		return Instruction{ SUB, Argument{a->A}, Argument{a->ram[address + 1].to_ulong(), IMM}, 2 };
+		break;
+	case 0x9F:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->A}, 1 };
+		break;
+	case 0x98:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->B}, 1 };
+		break;
+	case 0x99:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->C}, 1 };
+		break;
+	case 0x9A:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->D}, 1 };
+		break;
+	case 0x9B:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->E}, 1 };
+		break;
+	case 0x9C:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->H}, 1 };
+		break;
+	case 0x9D:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->L}, 1 };
+		break;
+	case 0x9E:
+		return Instruction{ SBC, Argument{a->A}, Argument{a->HL, ADDR}, 1 };
+		break;
+	case 0xA7:
+		return Instruction{ AND, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0xA0:
+		return Instruction{ AND, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0xA1:
+		return Instruction{ AND, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0xA2:
+		return Instruction{ AND, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0xA3:
+		return Instruction{ AND, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0xA4:
+		return Instruction{ AND, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0xA5:
+		return Instruction{ AND, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0xA6:
+		return Instruction{ AND, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
+	case 0xE6:
+		return Instruction{ AND, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{NONE}, 2 };
+		break;
+	case 0xB7:
+		return Instruction{ OR, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0xB0:
+		return Instruction{ OR, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0xB1:
+		return Instruction{ OR, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0xB2:
+		return Instruction{ OR, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0xB3:
+		return Instruction{ OR, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0xB4:
+		return Instruction{ OR, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0xB5:
+		return Instruction{ OR, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0xB6:
+		return Instruction{ OR, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
+	case 0xF6:
+		return Instruction{ OR, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{NONE}, 2 };
+		break;
+	case 0xAF:
+		return Instruction{ XOR, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0xA8:
+		return Instruction{ XOR, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0xA9:
+		return Instruction{ XOR, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0xAA:
+		return Instruction{ XOR, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0xAB:
+		return Instruction{ XOR, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0xAC:
+		return Instruction{ XOR, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0xAD:
+		return Instruction{ XOR, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0xAE:
+		return Instruction{ XOR, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
+	case 0xEE:
+		return Instruction{ XOR, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{NONE}, 2 };
+		break;
+	case 0xBF:
+		return Instruction{ CP, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0xB8:
+		return Instruction{ CP, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0xB9:
+		return Instruction{ CP, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0xBA:
+		return Instruction{ CP, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0xBB:
+		return Instruction{ CP, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0xBC:
+		return Instruction{ CP, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0xBD:
+		return Instruction{ CP, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0xBE:
+		return Instruction{ CP, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
+	case 0xFE:
+		return Instruction{ CP, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{NONE}, 2 };
+		break;
+	case 0x3C:
+		return Instruction{ INC, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0x04:
+		return Instruction{ INC, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0x0C:
+		return Instruction{ INC, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0x14:
+		return Instruction{ INC, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0x1C:
+		return Instruction{ INC, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0x24:
+		return Instruction{ INC, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0x2C:
+		return Instruction{ INC, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0x34:
+		return Instruction{ INC, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
+	case 0x3D:
+		return Instruction{ DEC, Argument{a->A}, Argument{NONE}, 1 };
+		break;
+	case 0x05:
+		return Instruction{ DEC, Argument{a->B}, Argument{NONE}, 1 };
+		break;
+	case 0x0D:
+		return Instruction{ DEC, Argument{a->C}, Argument{NONE}, 1 };
+		break;
+	case 0x15:
+		return Instruction{ DEC, Argument{a->D}, Argument{NONE}, 1 };
+		break;
+	case 0x1D:
+		return Instruction{ DEC, Argument{a->E}, Argument{NONE}, 1 };
+		break;
+	case 0x25:
+		return Instruction{ DEC, Argument{a->H}, Argument{NONE}, 1 };
+		break;
+	case 0x2D:
+		return Instruction{ DEC, Argument{a->L}, Argument{NONE}, 1 };
+		break;
+	case 0x35:
+		return Instruction{ DEC, Argument{a->HL, ADDR}, Argument{NONE}, 1 };
+		break;
 	}
 }

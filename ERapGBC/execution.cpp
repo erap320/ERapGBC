@@ -526,7 +526,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		return true;
 	}
-	case SUBC: {
+	case SBC: {
 		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
 		{
 			printf("%#.4x | ", PC.to_ulong());
