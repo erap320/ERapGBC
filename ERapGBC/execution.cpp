@@ -696,6 +696,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
+		//TODO implement DAA
 		warning("DAA not implemented yet");
 
 		return true;
@@ -767,6 +768,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//TODO implement halt
 		//Power down CPU until an interrupt occur
+		warning("HALT not implemented yet");
 
 		return true;
 	}
@@ -779,6 +781,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//TODO implement stop
 		//Halt CPU & LCD display until button pressed
+		warning("STOP not implemented yet");
 
 		return true;
 	}
@@ -791,6 +794,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//TODO implement DI
 		//Interrupts are disabled after  instruction after DI is executed
+		warning("DI not implemented yet");
 
 		return true;
 	}
@@ -803,6 +807,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//TODO implement EI
 		//Interrupts are enabled after  instruction after EI is executed
+		warning("EI not implemented yet");
 
 		return true;
 	}
@@ -1425,6 +1430,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		SP = SP.to_ulong() + 2;
 
 		//TODO implement EI
+		warning("EI in RETI not implemented yet");
 
 		return true;
 	}
@@ -1460,7 +1466,7 @@ bool Architecture::step(bool debug)
 	}
 
 	//Increase program counter
-	PC = (address + instr.length) & 0xffff;
+	PC = (address + instr.length()) & 0xffff;
 
 	return result;
 }

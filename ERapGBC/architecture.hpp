@@ -183,20 +183,56 @@ public:
 	Command cmd;
 	Argument arg1;
 	Argument arg2;
-	//Length of the binary instruction in bytes
-	unsigned short length;
 
-	Instruction(Command c, Argument a1 = Argument{ NONE }, Argument a2 = Argument{ NONE }, unsigned short len = 0)
+	Instruction(Command c, Argument a1 = Argument{ NONE }, Argument a2 = Argument{ NONE })
 	{
 		cmd = c;
 		arg1 = a1;
 		arg2 = a2;
-		length = len;
 	}
 
-	void setLength(unsigned short len)
+	//Length of the binary instruction in bytes
+	unsigned short length()
 	{
-		length = len;
+		//The byte used to define the command
+		unsigned short len = 1;
+
+		//Additional byte for commands defined with 2 bytes
+		switch (cmd)
+		{
+		case SWAP:
+		case STOP:
+		case RLC:
+		case RL:
+		case RRC:
+		case RR:
+		case SLA:
+		case SRA:
+		case SRL:
+		case BIT:
+		case SET:
+		case RES:
+			len++;
+			break;
+		}
+
+		//Don't consider immediate values for the RST command
+		//Since different opcodes are simulated using an immediate
+		//value
+		if (cmd == RST)
+			return len;
+
+		//Additional bytes for immediate values
+		if (arg1.type == IMM)
+			len++;
+		if (arg2.type == IMM)
+			len++;
+		if (arg1.type == W_IMM)
+			len+=2;
+		if (arg2.type == W_IMM)
+			len+=2;
+
+		return len;
 	}
 
 	//Define cast to string for printing
