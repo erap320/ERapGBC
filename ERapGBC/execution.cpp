@@ -434,7 +434,7 @@ bool Architecture::exec(Instruction i)
 //Defined to provide a common error message to all instructions
 void instruction_error(data address, Command cmd, Argument arg1, Argument arg2)
 {
-	printf("%#.4x | ", address);
+	printf("0x%.4x | ", address);
 	error("One or more arguments type incompatible with " + cmd_codes[cmd] + " instruction: " + (string)arg1 + "," + (string)arg2);
 }
 
@@ -1657,13 +1657,14 @@ bool Architecture::step(bool debug)
 
 	if (debug || !result)
 	{
-		print_instruction(address, instr);
-
 		print_registers();
+		
+		if (PC.to_ulong() != address + instr.length())
+			print_instructions(PC.to_ulong(), 5);
+		else
+			print_instructions(address, 5);
 
 		print_stack(5);
-
-		print_instruction(PC.to_ulong(), disasm(PC.to_ulong()));
 	}
 
 	return result;

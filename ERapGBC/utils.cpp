@@ -25,11 +25,11 @@ void debug(string str)
 	cout << "D> " << str << endl;
 }
 
-string to_hex(unsigned long i)
+string to_hex(unsigned long i, bool byte)
 {
 	std::stringstream stream;
 	stream << "0x"
-		<< std::setfill('0') << std::setw(4)
+		<< std::setfill('0') << std::setw(byte ? 2 : 4)
 		<< std::hex << i;
 	return stream.str();
 }

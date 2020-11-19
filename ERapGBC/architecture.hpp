@@ -318,7 +318,7 @@ public:
 	void print_ram(data address, unsigned int rows);
 
 	//Print a human readable instruction
-	void print_instruction(data address, Instruction instr);
+	void print_instructions(data address, unsigned int rows);
 
 	static Architecture* instance()
 	{
