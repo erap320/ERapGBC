@@ -9,11 +9,14 @@ using std::cout;
 using std::endl;
 
 #define BIOS_FILENAME "gbc_bios.bin"
+#define ROM_FILENAME "PokemonPicross.gbc"
 
 Architecture* Architecture::singleton = NULL;
 
 Architecture::Architecture()
 {
+	//Skip bios for now
+	/*
 	ifstream bios(BIOS_FILENAME, std::ios::in | std::ios::binary);
 	if (!bios)
 	{
@@ -33,6 +36,66 @@ Architecture::Architecture()
 	bios.close();
 
 	debug("BIOS loaded!");
+	*/
+
+	//Values after BIOS finished its checks
+	PC = 0x100;
+	AF = 0x11B0;
+	BC = 0x0013;
+	DE = 0x00D8;
+	HL = 0x014D;
+	SP = 0xFFFE;
+
+	ram[0xFF05] = 0x00;
+	ram[0xFF06] = 0x00;
+	ram[0xFF07] = 0x00;
+	ram[0xFF10] = 0x80;
+	ram[0xFF11] = 0xBF;
+	ram[0xFF12] = 0xF3;
+	ram[0xFF14] = 0xBF;
+	ram[0xFF16] = 0x3F;
+	ram[0xFF17] = 0x00;
+	ram[0xFF19] = 0xBF;
+	ram[0xFF1A] = 0x7F;
+	ram[0xFF1B] = 0xFF;
+	ram[0xFF1C] = 0x9F;
+	ram[0xFF1E] = 0xBF;
+	ram[0xFF20] = 0xFF;
+	ram[0xFF21] = 0x00;
+	ram[0xFF22] = 0x00;
+	ram[0xFF23] = 0xBF;
+	ram[0xFF24] = 0x77;
+	ram[0xFF25] = 0xF3;
+	ram[0xFF26] = 0xF1;
+	ram[0xFF40] = 0x91;
+	ram[0xFF42] = 0x00;
+	ram[0xFF43] = 0x00;
+	ram[0xFF45] = 0x00;
+	ram[0xFF47] = 0xFC;
+	ram[0xFF48] = 0xFF;
+	ram[0xFF49] = 0xFF;
+	ram[0xFF4A] = 0x00;
+	ram[0xFF4B] = 0x00;
+	ram[0xFFFF] = 0x00;
+
+	//Load rom
+	ifstream rom(ROM_FILENAME, std::ios::in | std::ios::binary);
+	if (!rom)
+	{
+		error("Can't open ROM file");
+		return;
+	}
+
+	data addr;
+	char buffer;
+	for(addr=0; addr<0x4000 && !rom.eof(); addr++)
+	{
+		rom.read(&buffer, 1);
+		ram[addr] = (byte)buffer;
+	}
+	rom.close();
+
+	debug("ROM loaded!");
 }
 
 void Architecture::dump_ram()

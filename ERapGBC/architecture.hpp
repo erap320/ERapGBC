@@ -2,6 +2,7 @@
 #include <iostream>
 #include <ostream>
 #include <bitset>
+#include "registers.hpp"
 #include "utils.hpp"
 using std::bitset;
 using std::string;
@@ -283,6 +284,11 @@ public:
 	CombinedRegister BC = { &B, &C };
 	CombinedRegister DE = { &D, &E };
 	CombinedRegister HL = { &H, &L };
+
+	//Flags to indicate CPU states
+	bool IN_STOP = false;
+	bool IN_HALT = false;
+	bool IME = true;		//Interrupt Master Enable
 
 	byte ram[RAM_SIZE];
 

@@ -915,9 +915,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
-		//TODO implement halt
-		//Power down CPU until an interrupt occur
-		warning("HALT not implemented yet");
+		IN_HALT = true;
 
 		return true;
 		break;
@@ -929,9 +927,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
-		//TODO implement stop
-		//Halt CPU & LCD display until button pressed
-		warning("STOP not implemented yet");
+		IN_STOP = true;
 
 		return true;
 		break;
@@ -943,9 +939,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
-		//TODO implement DI
-		//Interrupts are disabled after  instruction after DI is executed
-		warning("DI not implemented yet");
+		IME = false;
 
 		return true;
 		break;
@@ -957,9 +951,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			return false;
 		}
 
-		//TODO implement EI
-		//Interrupts are enabled after  instruction after EI is executed
-		warning("EI not implemented yet");
+		IME = true;
 
 		return true;
 		break;
@@ -1629,8 +1621,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		//Increment
 		SP = SP.to_ulong() + 2;
 
-		//TODO implement EI
-		warning("EI in RETI not implemented yet");
+		IME = true;
 
 		return true;
 		break;
