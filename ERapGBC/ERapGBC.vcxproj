@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="registers.hpp" />
     <ClInclude Include="architecture.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="win_color.h" />
