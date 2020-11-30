@@ -93,6 +93,8 @@ void Argument::w8(byte val)
 				Architecture::instance()->ram[address - 0x2000] = val;
 			else if (address >= 0xC000 && address <= 0xDE00)
 				Architecture::instance()->ram[address + 0x2000] = val;
+			else if (address == SVBK)
+				Architecture::instance()->swapWorkingBank( (val & (byte)0x7).to_ulong() );
 			
 			break;
 		}
@@ -105,6 +107,8 @@ void Argument::w8(byte val)
 				Architecture::instance()->ram[address - 0x2000] = val;
 			else if (address >= 0xC000 && address <= 0xDE00)
 				Architecture::instance()->ram[address + 0x2000] = val;
+			else if (address == SVBK)
+				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
 
 			break;
 		}
@@ -117,6 +121,8 @@ void Argument::w8(byte val)
 				Architecture::instance()->ram[address - 0x2000] = val;
 			else if (address >= 0xC000 && address <= 0xDE00)
 				Architecture::instance()->ram[address + 0x2000] = val;
+			else if (address == SVBK)
+				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
 
 			break;
 		}
@@ -129,6 +135,8 @@ void Argument::w8(byte val)
 				Architecture::instance()->ram[address - 0x2000] = val;
 			else if (address >= 0xC000 && address <= 0xDE00)
 				Architecture::instance()->ram[address + 0x2000] = val;
+			else if (address == SVBK)
+				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
 
 			break;
 		}
@@ -141,6 +149,8 @@ void Argument::w8(byte val)
 				Architecture::instance()->ram[address - 0x2000] = val;
 			else if (address >= 0xC000 && address <= 0xDE00)
 				Architecture::instance()->ram[address + 0x2000] = val;
+			else if (address == SVBK)
+				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
 
 			break;
 		}

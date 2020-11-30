@@ -9,6 +9,7 @@ using std::string;
 using std::to_string;
 
 #define RAM_SIZE 65536
+#define BANK_SIZE 4096
 #define BYTE_SIZE 8
 #define WORD_SIZE 16
 typedef bitset<BYTE_SIZE> byte;
@@ -290,7 +291,17 @@ public:
 	bool IN_HALT = false;
 	bool IME = true;		//Interrupt Master Enable
 
+	//Common address space
 	byte ram[RAM_SIZE];
+
+	//Working RAM banks
+	//0xC000 - 0xCFFF is always Bank0
+	//0xD000 - 0xDFFF is switched with the SVBK register
+	byte workingBanks[6][BANK_SIZE];
+	unsigned int currentWorkingBank = 0; //0 is Bank1
+
+	//Function to perform bank switching
+	void swapWorkingBank(unsigned short selected);
 
 	//Functions to access and modify flag register
 	bool Cflag() { return F[4]; }

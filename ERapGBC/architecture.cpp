@@ -100,6 +100,26 @@ Architecture::Architecture()
 	debug("ROM loaded!");
 }
 
+void Architecture::swapWorkingBank(unsigned short selected)
+{
+	data base = 0xD000;
+	
+	//Decrement to align with the array index
+	//If it's 0 it already selects bank 1, so we can leave it
+	if(selected > 0)
+		selected--;
+
+	for (data addr = 0; addr <= 0xFFF; addr++)
+	{
+		//Store the current state of the bank
+		workingBanks[currentWorkingBank][addr] = ram[base + addr];
+		//Replace the values in ram with the ones of the selected bank
+		ram[base + addr] = workingBanks[selected][addr];
+	}
+
+	currentWorkingBank = selected;
+}
+
 void Architecture::dump_ram()
 {
 	ofstream dump("dump.bin", std::ios::binary);
