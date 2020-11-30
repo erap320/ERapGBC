@@ -1554,3 +1554,46 @@ Instruction disasm(data address)
 		break;
 	}
 }
+
+unsigned short Instruction::length()
+{
+	//The byte used to define the command
+	unsigned short len = 1;
+
+	//Additional byte for commands defined with 2 bytes
+	switch (cmd)
+	{
+	case SWAP:
+	case STOP:
+	case RLC:
+	case RL:
+	case RRC:
+	case RR:
+	case SLA:
+	case SRA:
+	case SRL:
+	case BIT:
+	case SET:
+	case RES:
+		len++;
+		break;
+	}
+
+	//Don't consider immediate values for the RST command
+	//since different opcodes are simulated using an immediate
+	//value
+	if (cmd == BIT || cmd == SET || cmd == RES || cmd == RST)
+		return len;
+
+	//Additional bytes for immediate values
+	if (arg1.type == IMM)
+		len++;
+	if (arg2.type == IMM)
+		len++;
+	if (arg1.type == W_IMM)
+		len += 2;
+	if (arg2.type == W_IMM)
+		len += 2;
+
+	return len;
+}

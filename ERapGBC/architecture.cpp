@@ -102,6 +102,9 @@ Architecture::Architecture()
 
 void Architecture::swapWorkingBank(unsigned short selected)
 {
+	if (selected > 7)
+		error("Wrong Working RAM bank chosen, no swapping was performed: "+selected);
+
 	data base = 0xD000;
 	
 	//Decrement to align with the array index
@@ -118,6 +121,37 @@ void Architecture::swapWorkingBank(unsigned short selected)
 	}
 
 	currentWorkingBank = selected;
+}
+
+void Architecture::swapVideoBank(unsigned short selected)
+{
+	if (selected > 1)
+		error("Wrong Video RAM bank chosen, no swapping was performed: "+selected);
+
+	data base = 0x8000;
+
+	//Decrement to align with the array index
+	//If it's 0 it already selects bank 1, so we can leave it
+	if (selected > 0)
+		selected--;
+
+	for (data addr = 0; addr <= 0x1FFF; addr++)
+	{
+		//Store the current state of the bank
+		videoBanks[currentVideoBank][addr] = ram[base + addr];
+		//Replace the values in ram with the ones of the selected bank
+		ram[base + addr] = videoBanks[selected][addr];
+	}
+
+	currentVideoBank = selected;
+}
+
+void Architecture::runDMA(byte a)
+{
+	data address = (word(a.to_ulong()) << BYTE_SIZE).to_ulong();
+	data end = address + 0x9F;
+	for (data i=0; i <= 0x9F; i++)
+		ram[0xFF80 + i] = ram[address + i];
 }
 
 void Architecture::dump_ram()
@@ -179,6 +213,128 @@ void Architecture::print_ram(data addr, unsigned int rows)
 	cout << "---------------------------------------------\n";
 }
 
+//Gives a string representation of the argument if it is an address
+string addrName(data addr, bool byte, bool indirect)
+{
+	if (byte && indirect)
+	{
+		byte = false;
+		addr += 0xFF00;
+	}
+
+	switch (addr)
+	{
+	default:
+		return to_hex(addr, byte);
+		break;
+	case 0xFF00:
+		return "P1";
+		break;
+	case 0xFF01:
+		return "SB";
+		break;
+	case 0xFF02:
+		return "SC";
+		break;
+	case 0xFF04:
+		return "DIV";
+		break;
+	case 0xFF05:
+		return "TIMA";
+		break;
+	case 0xFF06:
+		return "TMA";
+		break;
+	case 0xFF07:
+		return "TAC";
+		break;
+	case 0xFF4D:
+		return "KEY1";
+		break;
+	case 0xFF56:
+		return "RP";
+		break;
+	case 0xFF4F:
+		return "VBK";
+		break;
+	case 0xFF70:
+		return "SVBK";
+		break;
+	case 0xFF0F:
+		return "IF";
+		break;
+	case 0xFFFF:
+		return "IE";
+		break;
+	case 0xFF40:
+		return "LCDC";
+		break;
+	case 0xFF41:
+		return "STAT";
+		break;
+	case 0xFF42:
+		return "SCY";
+		break;
+	case 0xFF43:
+		return "SCX";
+		break;
+	case 0xFF44:
+		return "LY";
+		break;
+	case 0xFF45:
+		return "LYC";
+		break;
+	case 0xFF46:
+		return "DMA";
+		break;
+	case 0xFF47:
+		return "BGP";
+		break;
+	case 0xFF48:
+		return "OBP0";
+		break;
+	case 0xFF49:
+		return "OBP1";
+		break;
+	case 0xFF4A:
+		return "WY";
+		break;
+	case 0xFF4B:
+		return "WX";
+		break;
+	case 0xFF51:
+		return "HDMA1";
+		break;
+	case 0xFF52:
+		return "HDMA2";
+		break;
+	case 0xFF53:
+		return "HDMA3";
+		break;
+	case 0xFF54:
+		return "HDMA4";
+		break;
+	case 0xFF55:
+		return "HDMA5";
+		break;
+	case 0xFF68:
+		return "BCPS";
+		break;
+	case 0xFF69:
+		return "BCPD";
+		break;
+	case 0xFF6A:
+		return "OCPS";
+		break;
+	case 0xFF6B:
+		return "OCPD";
+		break;
+	case 0xFE00:
+		return "OAM";
+		break;
+	}
+}
+
 void Architecture::print_instructions(data address, unsigned int rows)
 {
 	Instruction instr = Instruction{ERR};
@@ -200,10 +356,10 @@ void Architecture::print_instructions(data address, unsigned int rows)
 		switch (instr.arg1.type)
 		{
 		case IMM:
-			cout << to_hex(instr.arg1.value.immediate, true);
+			cout << addrName(instr.arg1.value.immediate, true, instr.arg1.address);
 			break;
 		case W_IMM:
-			cout << to_hex(instr.arg1.value.immediate);
+			cout << addrName(instr.arg1.value.immediate, false, instr.arg1.address);
 			break;
 		case REG: {
 			if (instr.arg1.value.reg == &A)
@@ -257,8 +413,10 @@ void Architecture::print_instructions(data address, unsigned int rows)
 		switch (instr.arg2.type)
 		{
 		case IMM:
+			cout << addrName(instr.arg2.value.immediate, true, instr.arg2.address);
+			break;
 		case W_IMM:
-			cout << to_hex(instr.arg2.value.immediate);
+			cout << addrName(instr.arg2.value.immediate, false, instr.arg2.address);
 			break;
 		case REG: {
 			if (instr.arg2.value.reg == &A)
@@ -305,7 +463,7 @@ void Architecture::print_instructions(data address, unsigned int rows)
 			cout << ")";
 
 		if (address == currentPC)
-			cout << "\t<- PC";
+			cout << "   <- PC";
 		
 		cout << endl;
 

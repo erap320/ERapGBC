@@ -74,6 +74,47 @@ byte Argument::r8()
 	}
 }
 
+//Used to implement various features
+//triggered when writing to registers
+void address_checks(data address, byte val)
+{
+	Architecture* arch = Architecture::instance();
+
+	//RAM echo emulation
+	if (address >= 0xE000 && address <= 0xFE00)
+		arch->ram[address - 0x2000] = val;
+	else if (address >= 0xC000 && address <= 0xDE00)
+		arch->ram[address + 0x2000] = val;
+	else if (address == SVBK) //Working RAM Banks
+		arch->swapWorkingBank((val & (byte)7).to_ulong());
+	else if (address == VBK) //Video RAM Banks
+		arch->swapVideoBank((val & (byte)1).to_ulong());
+	else if (address == DMA) //Direct Memory Access
+		arch->runDMA(val);
+	else if (address == BCPD) //Color palette data write
+	{
+		byte specification = arch->ram[BCPS];
+		unsigned short data = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
+		arch->colorPalettes[number][data][specification[0]] = val;
+
+		//Increment by adding one to bit 3, by summing 8
+		if (specification[7])
+			arch->ram[BCPS] = specification.to_ulong() + 8;
+	}
+	else if (address == OCPD) //OBJ palette data write
+	{
+		byte specification = arch->ram[OCPS];
+		unsigned short data = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
+		arch->colorPalettes[number][data][specification[0]] = val;
+
+		//Increment by adding one to bit 3, by summing 8
+		if (specification[7])
+			arch->ram[OCPS] = specification.to_ulong() + 8;
+	}
+}
+
 void Argument::w8(byte val)
 {
 	if (address)
@@ -88,13 +129,7 @@ void Argument::w8(byte val)
 			data address = 0xff00 + (value.immediate & 0xff);
 			Architecture::instance()->ram[address] = val;
 
-			//RAM echo emulation
-			if (address >= 0xE000 && address <= 0xFE00)
-				Architecture::instance()->ram[address - 0x2000] = val;
-			else if (address >= 0xC000 && address <= 0xDE00)
-				Architecture::instance()->ram[address + 0x2000] = val;
-			else if (address == SVBK)
-				Architecture::instance()->swapWorkingBank( (val & (byte)0x7).to_ulong() );
+			address_checks(address, val);
 			
 			break;
 		}
@@ -102,13 +137,7 @@ void Argument::w8(byte val)
 			data address = 0xff00 + value.reg->to_ulong();
 			Architecture::instance()->ram[address] = val;
 
-			//RAM echo emulation
-			if (address >= 0xE000 && address <= 0xFE00)
-				Architecture::instance()->ram[address - 0x2000] = val;
-			else if (address >= 0xC000 && address <= 0xDE00)
-				Architecture::instance()->ram[address + 0x2000] = val;
-			else if (address == SVBK)
-				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
+			address_checks(address, val);
 
 			break;
 		}
@@ -116,13 +145,7 @@ void Argument::w8(byte val)
 			data address = value.w_reg->to_ulong();
 			Architecture::instance()->ram[address] = val;
 
-			//RAM echo emulation
-			if (address >= 0xE000 && address <= 0xFE00)
-				Architecture::instance()->ram[address - 0x2000] = val;
-			else if (address >= 0xC000 && address <= 0xDE00)
-				Architecture::instance()->ram[address + 0x2000] = val;
-			else if (address == SVBK)
-				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
+			address_checks(address, val);
 
 			break;
 		}
@@ -130,13 +153,7 @@ void Argument::w8(byte val)
 			data address = ((word)*value.c_reg).to_ulong();
 			Architecture::instance()->ram[address] = val;
 
-			//RAM echo emulation
-			if (address >= 0xE000 && address <= 0xFE00)
-				Architecture::instance()->ram[address - 0x2000] = val;
-			else if (address >= 0xC000 && address <= 0xDE00)
-				Architecture::instance()->ram[address + 0x2000] = val;
-			else if (address == SVBK)
-				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
+			address_checks(address, val);
 
 			break;
 		}
@@ -144,13 +161,7 @@ void Argument::w8(byte val)
 			data address = value.immediate & 0xffff;
 			Architecture::instance()->ram[address] = val;
 
-			//RAM echo emulation
-			if (address >= 0xE000 && address <= 0xFE00)
-				Architecture::instance()->ram[address - 0x2000] = val;
-			else if (address >= 0xC000 && address <= 0xDE00)
-				Architecture::instance()->ram[address + 0x2000] = val;
-			else if (address == SVBK)
-				Architecture::instance()->swapWorkingBank((val & (byte)0x7).to_ulong());
+			address_checks(address, val);
 
 			break;
 		}

@@ -17,7 +17,7 @@ using std::mutex;
 #define CLK_TIME std::chrono::nanoseconds(954) //1.05 MHz
 #define DOUBLE_CLK_TIME std::chrono::nanoseconds(477) //2.10 Mhz
 
-#define DEBUGGER false
+#define DEBUGGER true
 
 //To ensure synchronization between threads
 //that try to access the architecture simultaneously
@@ -31,9 +31,7 @@ void architecture_main(Architecture* arch)
 	while (true)
 	{
 		if (DEBUGGER)
-		{
 			for (int i = 0; i < 10; i++) cout << endl;
-		}
 
 		arch_mutex.lock();
 		arch->step(DEBUGGER);

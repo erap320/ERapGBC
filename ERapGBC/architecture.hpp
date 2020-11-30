@@ -9,7 +9,8 @@ using std::string;
 using std::to_string;
 
 #define RAM_SIZE 65536
-#define BANK_SIZE 4096
+#define W_BANK_SIZE 0xFFF
+#define V_BANK_SIZE 0x1FFF
 #define BYTE_SIZE 8
 #define WORD_SIZE 16
 typedef bitset<BYTE_SIZE> byte;
@@ -160,7 +161,7 @@ struct Argument {
 				result += "(";
 
 			result += "Value: ";
-			result += to_hex(value.immediate);
+			result += to_hex(value.immediate, type==IMM);
 			
 			if (address)
 				result += ")";
@@ -220,48 +221,8 @@ public:
 	}
 
 	//Length of the binary instruction in bytes
-	unsigned short length()
-	{
-		//The byte used to define the command
-		unsigned short len = 1;
-
-		//Additional byte for commands defined with 2 bytes
-		switch (cmd)
-		{
-		case SWAP:
-		case STOP:
-		case RLC:
-		case RL:
-		case RRC:
-		case RR:
-		case SLA:
-		case SRA:
-		case SRL:
-		case BIT:
-		case SET:
-		case RES:
-			len++;
-			break;
-		}
-
-		//Don't consider immediate values for the RST command
-		//since different opcodes are simulated using an immediate
-		//value
-		if(cmd == BIT || cmd == SET || cmd == RES || cmd == RST)
-			return len;
-
-		//Additional bytes for immediate values
-		if (arg1.type == IMM)
-			len++;
-		if (arg2.type == IMM)
-			len++;
-		if (arg1.type == W_IMM)
-			len+=2;
-		if (arg2.type == W_IMM)
-			len+=2;
-
-		return len;
-	}
+	//Defined in disasm.cpp
+	unsigned short length();
 
 	//Define cast to string for printing
 	operator string() const { return "{Command: " + cmd_codes[cmd] + "; Arg1: " + (string)arg1 + "; Arg2: " + (string)arg2 + "}"; }
@@ -297,11 +258,34 @@ public:
 	//Working RAM banks
 	//0xC000 - 0xCFFF is always Bank0
 	//0xD000 - 0xDFFF is switched with the SVBK register
-	byte workingBanks[6][BANK_SIZE];
+	byte workingBanks[7][W_BANK_SIZE];
 	unsigned int currentWorkingBank = 0; //0 is Bank1
 
 	//Function to perform bank switching
 	void swapWorkingBank(unsigned short selected);
+
+	//Video RAM banks
+	//0x8000 - 0x9800 is switched with the VBK register
+	byte videoBanks[2][V_BANK_SIZE];
+	unsigned int currentVideoBank = 0;
+
+	//Function to perform bank switching
+	void swapVideoBank(unsigned short selected);
+
+	//Function to perform Direct Memory Access
+	void runDMA(byte a);
+
+	//Color palettes
+	//8 palettes
+	//4 data number
+	//2 - high (0) and low (1)
+	byte colorPalettes[8][4][2];
+
+	//OBJ palettes
+	//8 palettes
+	//4 data number
+	//2 - high (0) and low (1)
+	byte objPalettes[8][4][2];
 
 	//Functions to access and modify flag register
 	bool Cflag() { return F[4]; }
