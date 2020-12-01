@@ -20,7 +20,7 @@ using std::mutex;
 #define CLK_TIME std::chrono::nanoseconds(954) //1.05 MHz
 #define DOUBLE_CLK_TIME std::chrono::nanoseconds(477) //2.10 Mhz
 
-#define DEBUGGER true
+#define DEBUGGER false
 
 //To ensure synchronization between threads
 //that try to access the architecture simultaneously
@@ -28,6 +28,37 @@ mutex arch_mutex;
 
 void architecture_main(Architecture* arch)
 {
+	//SCREEN TEST
+	arch_mutex.lock();
+
+	arch->videoBanks[0][0] = 0x7C;
+	arch->videoBanks[0][1] = 0x7C;
+	arch->videoBanks[0][2] = 0x00;
+	arch->videoBanks[0][3] = 0xC6;
+	arch->videoBanks[0][4] = 0xC6;
+	arch->videoBanks[0][5] = 0x00;
+	arch->videoBanks[0][6] = 0x00;
+	arch->videoBanks[0][7] = 0xFE;
+	arch->videoBanks[0][8] = 0xC6;
+	arch->videoBanks[0][9] = 0xC6;
+	arch->videoBanks[0][10] = 0x00;
+	arch->videoBanks[0][11] = 0xC6;
+	arch->videoBanks[0][12] = 0xC6;
+	arch->videoBanks[0][13] = 0x00;
+	arch->videoBanks[0][14] = 0x00;
+	arch->videoBanks[0][15] = 0x00;
+
+	arch->colorPalettes[0][3][0] = 0x7C;
+	arch->colorPalettes[0][3][1] = 0x00;
+	arch->colorPalettes[0][1][0] = 0x03;
+	arch->colorPalettes[0][1][1] = 0xE0;
+	arch->colorPalettes[0][2][0] = 0x00;
+	arch->colorPalettes[0][2][1] = 0x1F;
+	arch->colorPalettes[0][0][0] = 0x00;
+	arch->colorPalettes[0][0][1] = 0x00;
+
+	arch_mutex.unlock();
+
 	string buffer;
 	bool dblClk = false;
 
@@ -62,7 +93,26 @@ void architecture_main(Architecture* arch)
 				if (!buffer.empty())
 				{
 					unsigned long breakpoint = strtoul(buffer.c_str(), NULL, 16) & 0xffff;
-					while (arch->PC.to_ulong() + disasm(arch->PC.to_ulong()).length() != breakpoint)
+					while (arch->PC.to_ulong() != breakpoint)
+					{
+						arch_mutex.lock();
+						arch->step(false);
+						dblClk = arch->ram[KEY1][7];
+						arch_mutex.unlock();
+
+						if (dblClk)
+							std::this_thread::sleep_for(DOUBLE_CLK_TIME);
+						else
+							std::this_thread::sleep_for(CLK_TIME);
+					}
+				}
+				break;
+			}
+			case 'c': {
+				//Continue
+				if (!buffer.empty())
+				{
+					while (true)
 					{
 						arch_mutex.lock();
 						arch->step(false);
@@ -140,8 +190,9 @@ int main()
 		}
 
 		arch_mutex.lock();
+
 		window.clear();
-		drawTile(arch, window);
+		drawScreen(arch, window);
 		window.display();
 
 		//Input

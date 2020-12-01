@@ -1,6 +1,11 @@
 #pragma once
 #include <string>
+#include <mutex>
 using std::string;
+using std::mutex;
+
+//Mutex for console output
+extern mutex out_mutex;
 
 //Formatted output functions
 void error(string str);

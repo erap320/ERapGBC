@@ -268,9 +268,13 @@ public:
 	//0x8000 - 0x9800 is switched with the VBK register
 	byte videoBanks[2][V_BANK_SIZE];
 	unsigned int currentVideoBank = 0;
+	bool videoBanksDirty = false;
 
 	//Function to perform bank switching
 	void swapVideoBank(unsigned short selected);
+
+	//Update the content of the video bank storage from memory
+	void updateVideoBank();
 
 	//Function to perform Direct Memory Access
 	void runDMA(byte a);

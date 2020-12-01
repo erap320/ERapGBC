@@ -85,6 +85,8 @@ void address_checks(data address, byte val)
 		arch->ram[address - 0x2000] = val;
 	else if (address >= 0xC000 && address <= 0xDE00)
 		arch->ram[address + 0x2000] = val;
+	else if (address >= 0x8000 && address <= 0x9FFF)
+		arch->videoBanksDirty = true;
 	else if (address == SVBK) //Working RAM Banks
 		arch->swapWorkingBank((val & (byte)7).to_ulong());
 	else if (address == VBK) //Video RAM Banks

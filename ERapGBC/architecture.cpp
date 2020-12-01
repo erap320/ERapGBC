@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include "utils.hpp"
 using std::ofstream;
 using std::ifstream;
 using std::cout;
@@ -146,6 +145,21 @@ void Architecture::swapVideoBank(unsigned short selected)
 	}
 
 	currentVideoBank = selected;
+	videoBanksDirty = false;
+}
+
+void Architecture::updateVideoBank()
+{
+	if (videoBanksDirty)
+	{
+		data base = 0x8000;
+		for (data addr = 0; addr <= 0x1FFF; addr++)
+		{
+			//Store the current state of the bank
+			videoBanks[currentVideoBank][addr] = ram[base + addr];
+		}
+		videoBanksDirty = false;
+	}
 }
 
 void Architecture::runDMA(byte a)
@@ -178,6 +192,7 @@ void Architecture::dump_ram()
 
 void Architecture::print_registers()
 {
+	out_mutex.lock();
 	cout << "\n################# REGISTERS #################\n";
 	cout << "PC:\t" << PC.to_string() << "  | " << to_hex(PC.to_ulong()) << endl;
 	cout << "SP:\t" << SP.to_string() << "  | " << to_hex(SP.to_ulong()) << endl;
@@ -187,10 +202,12 @@ void Architecture::print_registers()
 	cout << "H:\t" << H.to_string() << "  L:\t" << L.to_string() << "  | " << to_hex(((word)HL).to_ulong()) << endl;
 	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << endl;
 	cout << "---------------------------------------------\n";
+	out_mutex.unlock();
 }
 
 void Architecture::print_stack(unsigned int rows)
 {
+	out_mutex.lock();
 	cout << "\n################### STACK ###################\n";
 	data addr = SP.to_ulong();
 
@@ -202,10 +219,12 @@ void Architecture::print_stack(unsigned int rows)
 		cout << ram[addr + i].to_string() << endl;
 	}
 	cout << "---------------------------------------------\n";
+	out_mutex.unlock();
 }
 
 void Architecture::print_ram(data addr, unsigned int rows)
 {
+	out_mutex.lock();
 	cout << "\n###################  RAM  ###################\n";
 	for (unsigned int i = 0; i < rows && addr + i <= 0xffff; i++)
 	{
@@ -213,6 +232,7 @@ void Architecture::print_ram(data addr, unsigned int rows)
 		printf("0x%.2x \n", ram[addr + i].to_ulong());
 	}
 	cout << "---------------------------------------------\n";
+	out_mutex.unlock();
 }
 
 //Gives a string representation of the argument if it is an address
@@ -343,6 +363,7 @@ void Architecture::print_instructions(data address, unsigned int rows)
 
 	data currentPC = PC.to_ulong();
 
+	out_mutex.lock();
 	cout << "\n################ INSTRUCTIONS ###############\n";
 	for (unsigned int i=0; i < rows && address <= 0xffff; i++)
 	{
@@ -472,4 +493,5 @@ void Architecture::print_instructions(data address, unsigned int rows)
 		//Increase address
 		address += instr.length();
 	}
+	out_mutex.unlock();
 }
