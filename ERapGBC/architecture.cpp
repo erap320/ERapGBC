@@ -9,7 +9,6 @@ using std::cout;
 using std::endl;
 
 #define BIOS_FILENAME "gbc_bios.bin"
-#define ROM_FILENAME "PokemonPicross.gbc"
 
 Architecture* Architecture::singleton = NULL;
 
@@ -79,9 +78,12 @@ Architecture::Architecture()
 	ram[WY] = 0x00;
 	ram[WX] = 0x00;
 	ram[IE] = 0x00;
+}
 
+void Architecture::loadROM(string romFileName)
+{
 	//Load rom
-	ifstream rom(ROM_FILENAME, std::ios::in | std::ios::binary);
+	ifstream rom(romFileName, std::ios::in | std::ios::binary);
 	if (!rom)
 	{
 		error("Can't open ROM file");
@@ -90,7 +92,7 @@ Architecture::Architecture()
 
 	data addr;
 	char buffer;
-	for(addr=0; addr<0x4000 && !rom.eof(); addr++)
+	for (addr = 0; addr < 0x4000 && !rom.eof(); addr++)
 	{
 		rom.read(&buffer, 1);
 		ram[addr] = (byte)buffer;

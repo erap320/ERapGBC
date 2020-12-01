@@ -94,9 +94,9 @@ void address_checks(data address, byte val)
 	else if (address == BCPD) //Color palette data write
 	{
 		byte specification = arch->ram[BCPS];
-		unsigned short data = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
 		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
-		arch->colorPalettes[number][data][specification[0]] = val;
+		arch->colorPalettes[number][color][specification[0]] = val;
 
 		//Increment by adding one to bit 3, by summing 8
 		if (specification[7])
@@ -105,9 +105,9 @@ void address_checks(data address, byte val)
 	else if (address == OCPD) //OBJ palette data write
 	{
 		byte specification = arch->ram[OCPS];
-		unsigned short data = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
 		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
-		arch->colorPalettes[number][data][specification[0]] = val;
+		arch->colorPalettes[number][color][specification[0]] = val;
 
 		//Increment by adding one to bit 3, by summing 8
 		if (specification[7])

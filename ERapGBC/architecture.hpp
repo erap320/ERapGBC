@@ -277,13 +277,13 @@ public:
 
 	//Color palettes
 	//8 palettes
-	//4 data number
+	//4 colors
 	//2 - high (0) and low (1)
 	byte colorPalettes[8][4][2];
 
 	//OBJ palettes
 	//8 palettes
-	//4 data number
+	//4 colors
 	//2 - high (0) and low (1)
 	byte objPalettes[8][4][2];
 
@@ -324,8 +324,11 @@ public:
 	static Architecture* instance()
 	{
 		if (singleton == NULL)
-			singleton = new Architecture;
+			singleton = new Architecture();
 
 		return singleton;
 	}
+
+	//Loads a rom file in memory
+	void loadROM(string romFileName);
 };

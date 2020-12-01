@@ -1,4 +1,5 @@
 #include "architecture.hpp"
+#include "screen.hpp"
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -10,6 +11,8 @@ using std::getline;
 using std::endl;
 using std::thread;
 using std::mutex;
+
+#define ROM_FILENAME "PokemonPicross.gbc"
 
 #define LCD_W 160
 #define LCD_H 144
@@ -121,6 +124,7 @@ int main()
 	window.setVerticalSyncEnabled(true);
 
 	Architecture* arch = Architecture::instance();
+	arch->loadROM(ROM_FILENAME);
 
 	thread processing(architecture_main, arch);
 	processing.detach();
@@ -135,8 +139,12 @@ int main()
 				window.close();
 		}
 
-		//Input
 		arch_mutex.lock();
+		window.clear();
+		drawTile(arch, window);
+		window.display();
+
+		//Input
 		if (!arch->ram[P1][4]) //Read DPAD
 		{
 			arch->ram[P1][0] = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
@@ -152,9 +160,6 @@ int main()
 			arch->ram[P1][3] = sf::Keyboard::isKeyPressed(sf::Keyboard::Enter);
 		}
 		arch_mutex.unlock();
-
-		window.clear();
-		window.display();
 	}
 
 	return 0;
