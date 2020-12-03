@@ -144,9 +144,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="cartridge.hpp" />
     <ClInclude Include="registers.hpp" />
     <ClInclude Include="architecture.hpp" />
     <ClInclude Include="screen.hpp" />
+    <ClInclude Include="types.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="win_color.h" />
   </ItemGroup>

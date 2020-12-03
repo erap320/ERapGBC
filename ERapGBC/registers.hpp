@@ -44,3 +44,9 @@
 #define OCPS 0xFF6A
 #define OCPD 0xFF6B
 #define OAM 0xFE00 //TODO verify address
+
+//Additional useful addresses without an official name
+#define CART_RAM_ENABLE 0x0000
+#define CART_ROM_BANK 0x2000
+#define CART_RAM_BANK 0x4000
+#define CART_BANK_TYPE 0x6000

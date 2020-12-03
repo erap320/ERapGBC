@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <iostream>
 using std::ofstream;
-using std::ifstream;
 using std::cout;
 using std::endl;
 
@@ -81,24 +80,27 @@ Architecture::Architecture()
 
 void Architecture::loadROM(string romFileName)
 {
-	//Load rom
-	ifstream rom(romFileName, std::ios::in | std::ios::binary);
-	if (!rom)
+	if (cart.loadROM(romFileName))
 	{
-		error("Can't open ROM file");
-		return;
-	}
+		for (data addr = 0; addr < ROM_BANK_SIZE; addr++)
+		{
+			//Put ROM Bank0 in ram, starting address 0x0000
+			ram[addr] = cart.romBanks[0][addr];
+			//Put ROM Bank1 (set as current in architecture.hpp) in ram, starting address 0x4000
+			ram[0x4000 + addr] = cart.romBanks[currentROMBank][addr];
+		}
 
-	data addr;
-	char buffer;
-	for (addr = 0; addr < 0x4000 && !rom.eof(); addr++)
-	{
-		rom.read(&buffer, 1);
-		ram[addr] = (byte)buffer;
-	}
-	rom.close();
+		for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+		{
+			//Put RAM Bank0 (set as current in architecture.hpp) in ram, starting address 0xA000
+			ram[0xA000 + addr] = cart.ramBanks[currentRAMBank][addr];
+		}
 
-	debug("ROM loaded!");
+		debug("ROM loaded!");
+	}
+	else {
+		error("Error while loading ROM file " + romFileName);
+	}
 }
 
 void Architecture::swapWorkingBank(unsigned short selected)
@@ -160,6 +162,43 @@ void Architecture::updateVideoBank()
 		}
 		videoBanksDirty = false;
 	}
+}
+
+//Function to perform bank switching
+void Architecture::swapCartROMBank(unsigned int selected)
+{
+	if(selected > CART_ROM_BANKS-1)
+		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + selected);
+
+	for (data addr = 0; addr < ROM_BANK_SIZE; addr++)
+	{
+		//No need to copy data back as ROM can't be modified
+		//Put ROM Bank in ram, starting address 0x4000
+		ram[0x4000 + addr] = cart.romBanks[selected][addr];
+	}
+
+	currentROMBank = selected;
+	debug("Swapped cart ROM bank " + selected);
+}
+
+//Function to perform bank switching
+void Architecture::swapCartRAMBank(unsigned short selected)
+{
+	if (selected > CART_RAM_BANKS - 1)
+		error("Wrong Cartridge RAM bank chosen, no swapping was performed: " + selected);
+
+	data internalAddr;
+	for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+	{
+		internalAddr = 0xA000 + addr;
+		//Copy the content of the current bank to the cartridge
+		cart.ramBanks[currentRAMBank][addr] = ram[internalAddr];
+		//Put RAM Bank in ram, starting address 0xA000
+		ram[internalAddr] = cart.ramBanks[selected][addr];
+	}
+
+	currentRAMBank = selected;
+	debug("Swapped cart RAM bank "+selected);
 }
 
 void Architecture::runDMA(byte a)

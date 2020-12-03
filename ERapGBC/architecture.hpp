@@ -1,23 +1,16 @@
 #pragma once
 #include <iostream>
 #include <ostream>
-#include <bitset>
+#include "types.hpp"
 #include "registers.hpp"
 #include "utils.hpp"
-using std::bitset;
+#include "cartridge.hpp"
 using std::string;
 using std::to_string;
 
 #define RAM_SIZE 65536
 #define W_BANK_SIZE 0xFFF
 #define V_BANK_SIZE 0x1FFF
-#define BYTE_SIZE 8
-#define WORD_SIZE 16
-typedef bitset<BYTE_SIZE> byte;
-typedef bitset<WORD_SIZE> word;
-
-//Because it's the default smallest numeric type in which a bitset exports numbers
-typedef unsigned long data;
 
 //Forward definition
 class Architecture;
@@ -290,6 +283,17 @@ public:
 	//4 colors
 	//2 - high (0) and low (1)
 	byte objPalettes[8][4][2];
+
+	//Game cartridge
+	Cartridge cart;
+	unsigned int currentROMBank = 1;
+	unsigned short currentRAMBank = 0;
+
+	//Function to perform bank switching
+	void swapCartROMBank(unsigned int selected);
+
+	//Function to perform bank switching
+	void swapCartRAMBank(unsigned short selected);
 
 	//Functions to access and modify flag register
 	bool Cflag() { return F[4]; }

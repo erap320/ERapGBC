@@ -33,34 +33,43 @@ void architecture_main(Architecture* arch)
 
 	arch->videoBanks[0][0] = 0x7C;
 	arch->videoBanks[0][1] = 0x7C;
-	arch->videoBanks[0][2] = 0x00;
+	arch->videoBanks[0][2] = 0xC6;
 	arch->videoBanks[0][3] = 0xC6;
 	arch->videoBanks[0][4] = 0xC6;
-	arch->videoBanks[0][5] = 0x00;
-	arch->videoBanks[0][6] = 0x00;
+	arch->videoBanks[0][5] = 0xC6;
+	arch->videoBanks[0][6] = 0xFE;
 	arch->videoBanks[0][7] = 0xFE;
 	arch->videoBanks[0][8] = 0xC6;
 	arch->videoBanks[0][9] = 0xC6;
-	arch->videoBanks[0][10] = 0x00;
+	arch->videoBanks[0][10] = 0xC6;
 	arch->videoBanks[0][11] = 0xC6;
 	arch->videoBanks[0][12] = 0xC6;
-	arch->videoBanks[0][13] = 0x00;
+	arch->videoBanks[0][13] = 0xC6;
 	arch->videoBanks[0][14] = 0x00;
 	arch->videoBanks[0][15] = 0x00;
 
-	arch->colorPalettes[0][3][0] = 0x7C;
-	arch->colorPalettes[0][3][1] = 0x00;
-	arch->colorPalettes[0][1][0] = 0x03;
-	arch->colorPalettes[0][1][1] = 0xE0;
-	arch->colorPalettes[0][2][0] = 0x00;
-	arch->colorPalettes[0][2][1] = 0x1F;
+	arch->colorPalettes[0][3][0] = 0x7F;
+	arch->colorPalettes[0][3][1] = 0xFF;
+	arch->colorPalettes[1][3][0] = 0x03;
+	arch->colorPalettes[1][3][1] = 0xE0;
+	arch->colorPalettes[2][3][0] = 0x00;
+	arch->colorPalettes[2][3][1] = 0x1F;
+	arch->colorPalettes[3][3][0] = 0x7C;
+	arch->colorPalettes[3][3][1] = 0x00;
 	arch->colorPalettes[0][0][0] = 0x00;
 	arch->colorPalettes[0][0][1] = 0x00;
+
+	arch->videoBanks[1][0x1801] = 1;
+	arch->videoBanks[1][0x1802] = 2;
+	arch->videoBanks[1][0x1803] = 3;
 
 	arch_mutex.unlock();
 
 	string buffer;
 	bool dblClk = false;
+
+	if (!arch->cart.loaded)
+		warning("Running with no ROM loaded");
 
 	while (true)
 	{
@@ -173,9 +182,11 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(LCD_W, LCD_H), "ERapGBC");
 	window.setVerticalSyncEnabled(true);
 
+	//Create architecture and load rom
 	Architecture* arch = Architecture::instance();
 	arch->loadROM(ROM_FILENAME);
 
+	//Start the "CPU"
 	thread processing(architecture_main, arch);
 	processing.detach();
 
@@ -198,17 +209,17 @@ int main()
 		//Input
 		if (!arch->ram[P1][4]) //Read DPAD
 		{
-			arch->ram[P1][0] = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
-			arch->ram[P1][1] = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
-			arch->ram[P1][2] = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
-			arch->ram[P1][3] = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+			arch->ram[P1][0] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
+			arch->ram[P1][1] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+			arch->ram[P1][2] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
+			arch->ram[P1][3] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
 		}
 		else if (!arch->ram[P1][5]) //Read A,B,Select;Start
 		{
-			arch->ram[P1][0] = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
-			arch->ram[P1][1] = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
-			arch->ram[P1][2] = sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace);
-			arch->ram[P1][3] = sf::Keyboard::isKeyPressed(sf::Keyboard::Enter);
+			arch->ram[P1][0] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+			arch->ram[P1][1] = !sf::Keyboard::isKeyPressed(sf::Keyboard::X);
+			arch->ram[P1][2] = !sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace);
+			arch->ram[P1][3] = !sf::Keyboard::isKeyPressed(sf::Keyboard::Enter);
 		}
 		arch_mutex.unlock();
 	}

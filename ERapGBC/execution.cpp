@@ -115,6 +115,22 @@ void address_checks(data address, byte val)
 		if (specification[7])
 			arch->ram[OCPS] = specification.to_ulong() + 8;
 	}
+	else if (address == CART_BANK_TYPE)
+	{
+		//Don't really care during emulation
+		//If 1 is written it also enables RAM banks
+		//but we always allow both types
+	}
+	else if (address == CART_RAM_ENABLE)
+	{
+		//Don't care about this either
+		//In emulation there are no hardware problems
+		//for which it could be disabled
+	}
+	else if (address == CART_ROM_BANK)
+		arch->swapCartROMBank(val.to_ulong());
+	else if (address == CART_RAM_BANK)
+		arch->swapCartRAMBank(val.to_ulong());
 }
 
 void Argument::w8(byte val)
@@ -1659,27 +1675,67 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 bool Architecture::step(bool debug)
 {
-	//Fetch and decode instruction
-	data address = PC.to_ulong();
-	Instruction instr = disasm(address);
-
-	//Increase program counter
-	PC = (address + instr.length()) & 0xffff;
-
-	//Execute
-	bool result = exec(instr);
-
-	if (debug || !result)
+	if (IN_STOP)
 	{
-		print_registers();
-		
-		if (PC.to_ulong() != address + instr.length())
-			print_instructions(PC.to_ulong(), 5);
+		if (debug)
+			warning("STOP");
 		else
-			print_instructions(address, 5);
+		{
+			out_mutex.lock();
+			cout << "\rSTOP";
+			out_mutex.unlock();
+		}
 
-		print_stack(5);
+		//Change processor speed
+		ram[KEY1][7] = ram[KEY1][0];
+
+		//Stay in STOP mode until a button is pressed
+		if ((ram[P1] & (byte)0xf) != 0xf)
+			IN_STOP = false;
+
+		return true;
 	}
+	if (IN_HALT)
+	{
+		if (debug)
+			warning("HALT");
+		else
+		{
+			out_mutex.lock();
+			cout << "\rHALT";
+			out_mutex.unlock();
+		}
 
-	return result;
+		//Stay in HALT mode until an interrupt happens
+		if (ram[IF] != 0)
+			IN_HALT = false;
+
+		return true;
+	}
+	else
+	{
+		//Fetch and decode instruction
+		data address = PC.to_ulong();
+		Instruction instr = disasm(address);
+
+		//Increase program counter
+		PC = (address + instr.length()) & 0xffff;
+
+		//Execute
+		bool result = exec(instr);
+
+		if (debug || !result)
+		{
+			print_registers();
+
+			if (PC.to_ulong() != address + instr.length())
+				print_instructions(PC.to_ulong(), 5);
+			else
+				print_instructions(address, 5);
+
+			print_stack(5);
+		}
+
+		return result;
+	}
 }
