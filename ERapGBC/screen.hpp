@@ -33,7 +33,7 @@ void paintPixel(sf::Uint8* pixel, RGB color)
 	pixel[3] = 0xFF; //A
 }
 
-void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short x, unsigned short y)
+void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short x, unsigned short y, sf::Texture* tile)
 {
 	if (x > 31 || y > 31)
 	{
@@ -89,28 +89,22 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 		}
 	}
 
-	sf::Image image;
-	image.create(8, 8, pixels);
+	sf::Image img;
+	img.create(8, 8, pixels);
 
-	sf::Texture texture;
-	texture.loadFromImage(image);
-	sf::Sprite tile;
-	tile.setTexture(texture);
-	tile.setPosition(x * 8, y * 8);
-	
-	window.draw(tile);
+	tile->loadFromImage(img);
 
-	delete pixels;
+	delete[] pixels;
 }
 
-void drawScreen(Architecture* arch, sf::RenderWindow& const window)
+void drawScreen(Architecture* arch, sf::RenderWindow& const window, sf::Texture* tiles)
 {
 	arch->updateVideoBank();
 	for (int y = 0; y < 32; y++)
 	{
 		for (int x = 0; x < 32; x++)
 		{
-			drawTile(arch, window, x, y);
+			drawTile(arch, window, x, y, &tiles[y*32+x]);
 		}
 	}
 }

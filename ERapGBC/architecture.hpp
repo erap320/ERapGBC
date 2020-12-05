@@ -1,4 +1,5 @@
 #pragma once
+#include "exceptions.hpp"
 #include <iostream>
 #include <ostream>
 #include "types.hpp"
@@ -244,6 +245,7 @@ public:
 	bool IN_STOP = false;
 	bool IN_HALT = false;
 	bool IME = true;		//Interrupt Master Enable
+	bool scheduledIME = true; //Used to perform the 1-instr delay of EI and DI
 
 	//Common address space
 	byte ram[RAM_SIZE];
@@ -272,6 +274,9 @@ public:
 	//Function to perform Direct Memory Access
 	void runDMA(byte a);
 
+	//Function to perform New Direct Memory Access
+	void runVDMA(data src, data dst);
+
 	//Color palettes
 	//8 palettes
 	//4 colors
@@ -295,6 +300,10 @@ public:
 	//Function to perform bank switching
 	void swapCartRAMBank(unsigned short selected);
 
+	//Convenient bool that can be consulted to know
+	//if the processor is in double speed mode
+	bool doubleSpeed = false;
+
 	//Functions to access and modify flag register
 	bool Cflag() { return F[4]; }
 	bool Hflag() { return F[5]; }
@@ -312,7 +321,7 @@ public:
 	bool exec(Command cmd, Argument arg1 = Argument{ NONE }, Argument arg2 = Argument{ NONE });
 
 	//Execute one instruction pointed by PC
-	bool step(bool debug);
+	data step(bool& debug);
 
 	//Write the content of the ram in a .bin file
 	void dump_ram();

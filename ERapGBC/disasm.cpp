@@ -290,7 +290,7 @@ Instruction disasm(data address)
 		return Instruction{ LD, Argument{a->SP}, Argument{a->HL} };
 		break;
 	case 0xF8:
-		return Instruction{ LDHL, Argument{a->SP}, Argument{a->ram[address + 1].to_ulong(), IMM, ADDR } };
+		return Instruction{ LDHL, Argument{a->SP}, Argument{a->ram[address + 1].to_ulong(), IMM } };
 		break;
 	case 0x08: {
 		word imm = (word)(a->ram[address + 2].to_string() + a->ram[address + 1].to_string());
@@ -376,31 +376,31 @@ Instruction disasm(data address)
 		return Instruction{ ADC, Argument{a->A}, Argument{a->ram[address + 1].to_ulong(), IMM} };
 		break;
 	case 0x97:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->A} };
+		return Instruction{ SUB, Argument{a->A} };
 		break;
 	case 0x90:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->B} };
+		return Instruction{ SUB, Argument{a->B} };
 		break;
 	case 0x91:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->C} };
+		return Instruction{ SUB, Argument{a->C} };
 		break;
 	case 0x92:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->D} };
+		return Instruction{ SUB, Argument{a->D} };
 		break;
 	case 0x93:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->E} };
+		return Instruction{ SUB, Argument{a->E} };
 		break;
 	case 0x94:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->H} };
+		return Instruction{ SUB, Argument{a->H} };
 		break;
 	case 0x95:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->L} };
+		return Instruction{ SUB, Argument{a->L} };
 		break;
 	case 0x96:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->HL, ADDR} };
+		return Instruction{ SUB, Argument{a->HL, ADDR} };
 		break;
 	case 0xD6:
-		return Instruction{ SUB, Argument{a->A}, Argument{a->ram[address + 1].to_ulong(), IMM} };
+		return Instruction{ SUB, Argument{a->ram[address + 1].to_ulong(), IMM} };
 		break;
 	case 0x9F:
 		return Instruction{ SBC, Argument{a->A}, Argument{a->A} };

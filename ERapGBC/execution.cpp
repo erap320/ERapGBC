@@ -2,6 +2,97 @@
 using std::cout;
 using std::endl;
 
+//Used to implement various features
+//triggered when writing to registers
+void address_checks(data address, byte val)
+{
+	Architecture* arch = Architecture::instance();
+
+	switch (address)
+	{
+	case SVBK: //Working RAM Banks
+		arch->swapWorkingBank((val & (byte)7).to_ulong());
+		break;
+	case VBK: //Video RAM Banks
+		arch->swapVideoBank((val & (byte)1).to_ulong());
+		break;
+	case DMA: //Direct Memory Access
+		arch->runDMA(val);
+		break;
+	case BCPD: //Color palette data write
+	{
+		byte specification = arch->ram[BCPS];
+		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
+		arch->colorPalettes[number][color][specification[0]] = val;
+
+		//Increment by adding one to bit 3, by summing 8
+		if (specification[7])
+			arch->ram[BCPS] = specification.to_ulong() + 8;
+		break;
+	}
+	case OCPD: //OBJ palette data write
+	{
+		byte specification = arch->ram[OCPS];
+		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
+		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
+		arch->colorPalettes[number][color][specification[0]] = val;
+
+		//Increment by adding one to bit 3, by summing 8
+		if (specification[7])
+			arch->ram[OCPS] = specification.to_ulong() + 8;
+		break;
+	}
+	case CART_BANK_TYPE:
+	{
+		//Don't really care during emulation
+		//If 1 is written it also enables RAM banks
+		//but we always allow both types
+		break;
+	}
+	case CART_RAM_ENABLE:
+	{
+		//Don't care about this either
+		//In emulation there are no hardware problems
+		//for which it could be disabled
+		break;
+	}
+	case CART_ROM_BANK:
+		arch->swapCartROMBank(val.to_ulong());
+		break;
+	case CART_RAM_BANK:
+		arch->swapCartRAMBank(val.to_ulong());
+		break;
+	case LCDC:
+	{
+		if (val[7] == 0 && arch->ram[LCDC] == 1)
+			arch->ram[LY] = 0;
+		break;
+	}
+	case HDMA5:
+	{
+		data source = (arch->ram[HDMA2] & (byte)0xff00).to_ulong();
+		source += (arch->ram[HDMA1] << BYTE_SIZE).to_ulong();
+		
+		data destination = (arch->ram[HDMA1] & (byte)0xff00).to_ulong();
+		destination += ((arch->ram[HDMA1] & (byte)0x1f) << BYTE_SIZE).to_ulong() + 0x8000;
+
+		arch->runVDMA(source, destination);
+		break;
+	}
+	default:
+	{
+		if (address >= 0xE000 && address <= 0xFE00)
+			arch->ram[address - 0x2000] = val;
+		else if (address >= 0xC000 && address <= 0xDE00)
+			arch->ram[address + 0x2000] = val;
+		else if (address >= 0x8000 && address <= 0x9FFF)
+			arch->videoBanksDirty = true;
+		break;
+	}
+	}
+}
+
 byte Argument::r8()
 {
 	if (address)
@@ -62,6 +153,7 @@ byte Argument::r8()
 		case W_IMM: {
 			//An argument of 16 bits should always be read as a word
 			error("Trying to read a byte from a word");
+			throw ReadWriteException();
 			return 0;
 			break;
 		}
@@ -72,65 +164,6 @@ byte Argument::r8()
 		}
 		}
 	}
-}
-
-//Used to implement various features
-//triggered when writing to registers
-void address_checks(data address, byte val)
-{
-	Architecture* arch = Architecture::instance();
-
-	//RAM echo emulation
-	if (address >= 0xE000 && address <= 0xFE00)
-		arch->ram[address - 0x2000] = val;
-	else if (address >= 0xC000 && address <= 0xDE00)
-		arch->ram[address + 0x2000] = val;
-	else if (address >= 0x8000 && address <= 0x9FFF)
-		arch->videoBanksDirty = true;
-	else if (address == SVBK) //Working RAM Banks
-		arch->swapWorkingBank((val & (byte)7).to_ulong());
-	else if (address == VBK) //Video RAM Banks
-		arch->swapVideoBank((val & (byte)1).to_ulong());
-	else if (address == DMA) //Direct Memory Access
-		arch->runDMA(val);
-	else if (address == BCPD) //Color palette data write
-	{
-		byte specification = arch->ram[BCPS];
-		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
-		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
-		arch->colorPalettes[number][color][specification[0]] = val;
-
-		//Increment by adding one to bit 3, by summing 8
-		if (specification[7])
-			arch->ram[BCPS] = specification.to_ulong() + 8;
-	}
-	else if (address == OCPD) //OBJ palette data write
-	{
-		byte specification = arch->ram[OCPS];
-		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
-		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
-		arch->colorPalettes[number][color][specification[0]] = val;
-
-		//Increment by adding one to bit 3, by summing 8
-		if (specification[7])
-			arch->ram[OCPS] = specification.to_ulong() + 8;
-	}
-	else if (address == CART_BANK_TYPE)
-	{
-		//Don't really care during emulation
-		//If 1 is written it also enables RAM banks
-		//but we always allow both types
-	}
-	else if (address == CART_RAM_ENABLE)
-	{
-		//Don't care about this either
-		//In emulation there are no hardware problems
-		//for which it could be disabled
-	}
-	else if (address == CART_ROM_BANK)
-		arch->swapCartROMBank(val.to_ulong());
-	else if (address == CART_RAM_BANK)
-		arch->swapCartRAMBank(val.to_ulong());
 }
 
 void Argument::w8(byte val)
@@ -145,7 +178,8 @@ void Argument::w8(byte val)
 		}
 		case IMM: {
 			data address = 0xff00 + (value.immediate & 0xff);
-			Architecture::instance()->ram[address] = val;
+			if(address > 0x7FFF)
+				Architecture::instance()->ram[address] = val;
 
 			address_checks(address, val);
 			
@@ -153,7 +187,8 @@ void Argument::w8(byte val)
 		}
 		case REG: {
 			data address = 0xff00 + value.reg->to_ulong();
-			Architecture::instance()->ram[address] = val;
+			if (address > 0x7FFF)
+				Architecture::instance()->ram[address] = val;
 
 			address_checks(address, val);
 
@@ -161,7 +196,8 @@ void Argument::w8(byte val)
 		}
 		case W_REG: {
 			data address = value.w_reg->to_ulong();
-			Architecture::instance()->ram[address] = val;
+			if (address > 0x7FFF)
+				Architecture::instance()->ram[address] = val;
 
 			address_checks(address, val);
 
@@ -169,7 +205,8 @@ void Argument::w8(byte val)
 		}
 		case C_REG: {
 			data address = ((word)*value.c_reg).to_ulong();
-			Architecture::instance()->ram[address] = val;
+			if (address > 0x7FFF)
+				Architecture::instance()->ram[address] = val;
 
 			address_checks(address, val);
 
@@ -177,7 +214,8 @@ void Argument::w8(byte val)
 		}
 		case W_IMM: {
 			data address = value.immediate & 0xffff;
-			Architecture::instance()->ram[address] = val;
+			if (address > 0x7FFF)
+				Architecture::instance()->ram[address] = val;
 
 			address_checks(address, val);
 
@@ -210,6 +248,7 @@ void Argument::w8(byte val)
 		case C_REG: {
 			//An argument of 16 bits should always be written as a word
 			error("Trying to write a byte to a word");
+			throw ReadWriteException();
 			break;
 		}
 		default: {
@@ -281,6 +320,7 @@ word Argument::r16()
 		case REG: {
 			//An argument of only 8 bits should always be read as a byte
 			error("Trying to read a word from a byte");
+			throw ReadWriteException();
 			return 0;
 			break;
 		}
@@ -447,6 +487,7 @@ void Argument::w16(word val)
 		case REG: {
 			//An argument of only 8 bits should always be written as a byte
 			error("Trying to write a word to a byte");
+			throw ReadWriteException();
 			break;
 		}
 		case W_REG: {
@@ -470,1210 +511,7 @@ bool Architecture::exec(Instruction i)
 	return exec(i.cmd, i.arg1, i.arg2);
 }
 
-//Defined to provide a common error message to all instructions
-void instruction_error(data address, Command cmd, Argument arg1, Argument arg2)
-{
-	printf("0x%.4x | ", address);
-	error("One or more arguments type incompatible with " + cmd_codes[cmd] + " instruction: " + (string)arg1 + "," + (string)arg2);
-}
-
-bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
-{
-	switch (cmd)
-	{
-	case LDH:
-	case LD: {
-		if (arg1.type == NONE || arg2.type == NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Copy
-		arg1.copy(arg2);
-		return true;
-		break;
-	}
-	case LDD: {
-		if (arg1.type == C_REG && arg1.address && arg2.type == REG && !arg2.address)
-		{
-			//Copy
-			arg1.copy(arg2);
-			//Decrement
-			*(arg1.value.c_reg) = ((word) * (arg1.value.c_reg)).to_ulong() - 1;
-			return true;
-		}
-		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
-		{
-			//Copy
-			arg1.copy(arg2);
-			//Decrement
-			*(arg2.value.c_reg) = ((word) * (arg2.value.c_reg)).to_ulong() - 1;
-			return true;
-		}
-		else
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		break;
-	}
-	case LDI: {
-		if (arg1.type == C_REG && arg1.address && arg2.type == REG && !arg2.address)
-		{
-			//Copy
-			arg1.copy(arg2);
-			//Decrement
-			*(arg1.value.c_reg) = ((word) * (arg1.value.c_reg)).to_ulong() + 1;
-			return true;
-		}
-		else if (arg2.type == C_REG && arg2.address && arg1.type == REG && !arg1.address)
-		{
-			//Copy
-			arg1.copy(arg2);
-			//Decrement
-			*(arg2.value.c_reg) = ((word) * (arg2.value.c_reg)).to_ulong() + 1;
-			return true;
-		}
-		else
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		break;
-	}
-	case LDHL: {
-		if (arg1.type == W_REG && !arg1.address && arg2.type == IMM && !arg2.address)
-		{
-			//Copy
-			HL = arg1.r16();
-			//Decrement
-			data res = arg2.r16().to_ulong() + arg2.r8().to_ulong();
-			arg2.w16(res & 0xffff);
-			//Flags
-			Zflag(0);
-			Nflag(0);
-			//TODO half carry
-			Cflag(res > 0xffff); //TODO check
-
-			return true;
-		}
-		else
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-		break;
-	}
-	case PUSH: {
-		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-		else
-		{
-			word val = arg1.r16();
-			data stack = SP.to_ulong();
-			//Copy
-			ram[stack] = (val >> BYTE_SIZE).to_ulong();
-			ram[stack - 1] = (val & (word)0xff).to_ulong();
-			//Decrement
-			SP = SP.to_ulong() - 2;
-			return true;
-		}
-		break;
-	}
-	case POP: {
-		if (arg1.type != C_REG || arg1.address || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-		else
-		{
-			data stack = SP.to_ulong();
-			arg1.w16(word(ram[stack].to_string() + ram[stack + 1].to_string()));
-			//Increment
-			SP = SP.to_ulong() + 2;
-			return true;
-		}
-		break;
-	}
-	case ADD: {
-		if (arg1.type == NONE || arg2.type == NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Add
-		data res = arg1.r8().to_ulong() + arg2.r8().to_ulong();
-
-		switch (arg1.type)
-		{
-		case REG:
-			arg1.w8(res & 0xff);
-		case W_REG:
-		case C_REG:
-			arg1.w16(res & 0xffff);
-		}
-
-		//Flags
-		switch (arg1.type)
-		{
-		case REG:
-			Zflag(res == 0);
-		case W_REG:
-			Zflag(0);
-		}
-		Nflag(0);
-		//TODO half carry
-		switch (arg1.type)
-		{
-		case REG:
-			Cflag(res > 0xff);
-		case C_REG:
-		case W_REG:
-			Cflag(res > 0xffff);
-		}
-
-		return true;
-		break;
-	}
-	case ADC: {
-		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Add
-		data res = arg1.r8().to_ulong() + arg2.r8().to_ulong() + (unsigned int)Cflag();
-		arg1.w8(res & 0xffff);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		//TODO half carry
-		Cflag(res > 0xff);
-
-		return true;
-		break;
-	}
-	case SUB: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Sub
-		data res = A.to_ulong() - arg1.r8().to_ulong();
-		A = res & 0xffff;
-		//Flags
-		Zflag(res == 0);
-		Nflag(1);
-		//TODO half carry
-		Cflag(A[7] != 0 || arg1.r8()[7] != 1);
-
-		return true;
-		break;
-	}
-	case SBC: {
-		if (arg1.type != REG || arg1.address || (arg2.type >= W_REG && !arg2.address) || arg2.type == NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Sub
-		data res = arg1.r8().to_ulong() - arg2.r8().to_ulong() - Cflag();
-		arg1.w8(res & 0xffff);
-		//Flags
-		Zflag(res == 0);
-		Nflag(1);
-		//TODO half carry
-		Cflag(arg1.r8()[7] != 0 || arg2.r8()[7] != 1);
-
-		return true;
-		break;
-	}
-	case AND: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//And
-		byte res = A & arg1.r8();
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(1);
-		Cflag(0);
-
-		return true;
-		break;
-	}
-	case OR: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Or
-		byte res = A | arg1.r8();
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(0);
-
-		return true;
-		break;
-	}
-	case XOR: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Xor
-		byte res = A ^ arg1.r8();
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(0);
-
-		return true;
-		break;
-	}
-	case CP: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Flags
-		Zflag(A == arg1.r8());
-		Nflag(1);
-		//TODO half carry
-		Cflag(A.to_ulong() < arg1.r8().to_ulong());
-
-		return true;
-		break;
-	}
-	case INC: {
-		if (arg1.type == NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Increase
-		data res;
-		switch (arg1.type)
-		{
-		case REG: {
-			res = arg1.r8().to_ulong() + 1;
-			arg1.w8(res & 0xff);
-			break;
-		}
-		case W_REG:
-		case C_REG:
-			res = arg1.r16().to_ulong() + 1;
-			arg1.w16(res & 0xffff);
-			break;
-		}
-		//Flags
-		if (arg1.type == REG)
-		{
-			Zflag(res == 0);
-			Nflag(0);
-			//TODO half carry
-		}
-		//Cflag unaffected
-
-		return true;
-		break;
-	}
-	case DEC: {
-		if (arg1.type == NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Decrease
-		data res;
-		switch (arg1.type)
-		{
-		case REG: {
-			res = arg1.r8().to_ulong() - 1;
-			arg1.w8(res & 0xff);
-			break;
-		}
-		case W_REG:
-		case C_REG: {
-			res = arg1.r16().to_ulong() - 1;
-			arg1.w16(res & 0xffff);
-			break;
-		}
-		}
-
-		//Flags
-		Zflag(res == 0);
-		if (arg1.type == REG)
-		{
-			Zflag(res == 0);
-			Nflag(1);
-			//TODO half carry
-		}
-		//TODO half carry
-		//Cflag unaffected
-
-		return true;
-		break;
-	}
-	case SWAP: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Swap
-		byte res = arg1.r8() & (byte)0xf0;
-		res >>= 4;
-		res = res.to_ulong() + ((arg1.r8() & (byte)0x0f) << 4).to_ulong();
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(0);
-
-		return true;
-		break;
-	}
-	case DAA: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//TODO implement DAA
-		warning("DAA not implemented yet");
-
-		//Flags
-		Zflag(A == 0);
-		//Nflag not affected;
-		Hflag(0);
-		//TODO Cflag
-
-		return true;
-		break;
-	}
-	case CPL: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Not
-		A = ~A;
-		//Flags
-		//Zflag not affected
-		Nflag(1);
-		Hflag(1);
-		//Cflag not affected
-
-		return true;
-		break;
-	}
-	case CCF: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Flags
-		//Zflag not affected
-		Nflag(0);
-		Hflag(0);
-		Cflag(!Cflag());
-
-		return true;
-		break;
-	}
-	case SCF: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Flags
-		//Zflag not affected
-		Nflag(0);
-		Hflag(0);
-		Cflag(1);
-
-		return true;
-		break;
-	}
-	case NOP: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Nothing :)
-
-		return true;
-		break;
-	}
-	case HALT: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		IN_HALT = true;
-
-		return true;
-		break;
-	}
-	case STOP: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		IN_STOP = true;
-
-		return true;
-		break;
-	}
-	case DI: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		IME = false;
-
-		return true;
-		break;
-	}
-	case EI: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		IME = true;
-
-		return true;
-		break;
-	}
-	case RLCA: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate left
-		byte res = A << 1;
-		res[0] = A[7];
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(A[7]);
-
-		return true;
-		break;
-	}
-	case RLA: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate left
-		byte res = A << 1;
-		res[0] = Cflag();
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(A[7]);
-
-		return true;
-		break;
-	}
-	case RRCA: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate right
-		byte res = A >> 1;
-		res[7] = A[0];
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(A[0]);
-
-		return true;
-		break;
-	}
-	case RRA: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate right
-		byte res = A >> 1;
-		res[7] = Cflag();
-		A = res;
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(A[0]);
-
-		return true;
-		break;
-	}
-	case RLC: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate left
-		byte old = arg1.r8();
-		byte res = old << 1;
-		res[0] = old[7];
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[7]);
-
-		return true;
-		break;
-	}
-	case RL: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate left
-		byte old = arg1.r8();
-		byte res = old << 1;
-		res[0] = Cflag();
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[7]);
-
-		return true;
-		break;
-	}
-	case RRC: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate right
-		byte old = arg1.r8();
-		byte res = old >> 1;
-		res[7] = old[0];
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[0]);
-
-		return true;
-		break;
-	}
-	case RR: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Rotate right
-		byte old = arg1.r8();
-		byte res = old >> 1;
-		res[7] = Cflag();
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[0]);
-
-		return true;
-		break;
-	}
-	case SLA: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Shift left
-		byte old = arg1.r8();
-		byte res = old << 1;
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[7]);
-
-		return true;
-		break;
-	}
-	case SRA: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Shift right
-		byte old = arg1.r8();
-		byte res = old >> 1;
-		res[7] = old[7];
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[0]);
-
-		return true;
-		break;
-	}
-	case SRL: {
-		if ((arg1.type >= W_REG && !arg1.address) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Shift right
-		byte old = arg1.r8();
-		byte res = old >> 1;
-		arg1.w8(res);
-		//Flags
-		Zflag(res == 0);
-		Nflag(0);
-		Hflag(0);
-		Cflag(old[0]);
-
-		return true;
-		break;
-	}
-	case BIT: {
-		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
-
-		//Flags
-		Zflag(!(arg2.r8()[bit]));
-		Nflag(0);
-		Hflag(1);
-		//Cflag not affected
-
-		return true;
-		break;
-	}
-	case SET: {
-		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
-		byte res = arg2.r8();
-		res[bit] = 1;
-
-		arg2.w8(res);
-
-		return true;
-		break;
-	}
-	case RES: {
-		if (arg1.type != IMM || arg1.address || (arg2.type >= W_REG && !arg2.address))
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		unsigned short bit = (arg1.r8() & (byte)0x7).to_ulong();
-		byte res = arg2.r8();
-		res[bit] = 0;
-
-		arg2.w8(res);
-
-		return true;
-		break;
-	}
-	case JP: {
-		if ((arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address)) || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case JPNZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Zflag())
-			PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case JPZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Zflag())
-			PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case JPNC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Cflag())
-			PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case JPC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Cflag())
-			PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case JR: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		signed char delta = arg1.r8().to_ulong();
-		PC = PC.to_ulong() + delta;
-
-		return true;
-		break;
-	}
-	case JRNZ: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Zflag())
-		{
-			signed char delta = arg1.r8().to_ulong();
-			PC = PC.to_ulong() + delta;
-		}
-
-		return true;
-		break;
-	}
-	case JRZ: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Zflag())
-		{
-			signed char delta = arg1.r8().to_ulong();
-			PC = PC.to_ulong() + delta;
-		}
-
-		return true;
-		break;
-	}
-	case JRNC: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Cflag())
-		{
-			signed char delta = arg1.r8().to_ulong();
-			PC = PC.to_ulong() + delta;
-		}
-
-		return true;
-		break;
-	}
-	case JRC: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Cflag())
-		{
-			signed char delta = arg1.r8().to_ulong();
-			PC = PC.to_ulong() + delta;
-		}
-
-		return true;
-		break;
-	}
-	case CALL: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Push
-		word savedPC = PC.to_ulong() + 3; //Because the CALL instruction is 3 bytes long
-		data stack = SP.to_ulong();
-		//Copy
-		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-		ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-		//Decrement
-		SP = SP.to_ulong() - 2;
-
-		//Jump
-		PC = arg1.r16();
-
-		return true;
-		break;
-	}
-	case CALLNZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Zflag())
-		{
-			//Push
-			word savedPC = PC.to_ulong() + 1;
-			data stack = SP.to_ulong();
-			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-			//Decrement
-			SP = SP.to_ulong() - 2;
-
-			//Jump
-			PC = arg1.r16();
-		}
-
-		return true;
-		break;
-	}
-	case CALLZ: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Zflag())
-		{
-			//Push
-			word savedPC = PC.to_ulong() + 1;
-			data stack = SP.to_ulong();
-			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-			//Decrement
-			SP = SP.to_ulong() - 2;
-
-			//Jump
-			PC = arg1.r16();
-		}
-
-		return true;
-		break;
-	}
-	case CALLNC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Cflag())
-		{
-			//Push
-			word savedPC = PC.to_ulong() + 1;
-			data stack = SP.to_ulong();
-			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-			//Decrement
-			SP = SP.to_ulong() - 2;
-
-			//Jump
-			PC = arg1.r16();
-		}
-
-		return true;
-		break;
-	}
-	case CALLC: {
-		if (arg1.type != W_IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Cflag())
-		{
-			//Push
-			word savedPC = PC.to_ulong() + 1;
-			data stack = SP.to_ulong();
-			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-			//Decrement
-			SP = SP.to_ulong() - 2;
-
-			//Jump
-			PC = arg1.r16();
-		}
-
-		return true;
-		break;
-	}
-	case RST: {
-		if (arg1.type != IMM || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Push
-		word savedPC = PC;
-		data stack = SP.to_ulong();
-		//Copy
-		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-		ram[stack - 1] = (savedPC & (word)0xff).to_ulong();
-		//Decrement
-		SP = SP.to_ulong() - 2;
-
-		//Jump
-		PC = arg1.r8().to_ulong();
-
-		return true;
-		break;
-	}
-	case RET: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Pop
-		data stack = SP.to_ulong();
-		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-		//Increment
-		SP = SP.to_ulong() + 2;
-
-		return true;
-		break;
-	}
-	case RETNZ: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Zflag())
-		{
-			//Pop
-			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-			//Increment
-			SP = SP.to_ulong() + 2;
-		}
-
-		return true;
-		break;
-	}
-	case RETZ: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Zflag())
-		{
-			//Pop
-			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-			//Increment
-			SP = SP.to_ulong() + 2;
-		}
-
-		return true;
-		break;
-	}
-	case RETNC: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (!Cflag())
-		{
-			//Pop
-			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-			//Increment
-			SP = SP.to_ulong() + 2;
-		}
-
-		return true;
-		break;
-	}
-	case RETC: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		if (Cflag())
-		{
-			//Pop
-			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-			//Increment
-			SP = SP.to_ulong() + 2;
-		}
-
-		return true;
-		break;
-	}
-	case RETI: {
-		if (arg1.type != NONE || arg2.type != NONE)
-		{
-			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
-			return false;
-		}
-
-		//Pop
-		data stack = SP.to_ulong();
-		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
-		//Increment
-		SP = SP.to_ulong() + 2;
-
-		IME = true;
-
-		return true;
-		break;
-	}
-	default: {
-		error("Invalid instruction: " + cmd_codes[cmd]);
-		return false;
-		break;
-	}
-	}
-}
-
-bool Architecture::step(bool debug)
+data Architecture::step(bool& debug)
 {
 	if (IN_STOP)
 	{
@@ -1688,9 +526,10 @@ bool Architecture::step(bool debug)
 
 		//Change processor speed
 		ram[KEY1][7] = ram[KEY1][0];
+		doubleSpeed = ram[KEY1][0];
 
 		//Stay in STOP mode until a button is pressed
-		if ((ram[P1] & (byte)0xf) != 0xf)
+		if (ram[IF][4])
 			IN_STOP = false;
 
 		return true;
@@ -1707,22 +546,99 @@ bool Architecture::step(bool debug)
 		}
 
 		//Stay in HALT mode until an interrupt happens
-		if (ram[IF] != 0)
+		if ((ram[IF] & (byte)0x1f) != 0)
 			IN_HALT = false;
 
 		return true;
 	}
 	else
 	{
+		//Manage interrupts if there is any
+		if (IME)
+		{
+			byte interrupts = ram[IF] & ram[IE] & (byte)0x1f; //IF masked with IE
+
+			//One of the interrupts will be executed
+			if (interrupts.to_ulong() != 0)
+			{
+				IME = false;
+
+				dump_ram();
+
+				//Push PC
+				//Decrement
+				data stack = SP.to_ulong() - 2;
+				SP = stack;
+				//Copy
+				ram[stack] = (PC >> BYTE_SIZE).to_ulong();
+				ram[stack + 1] = (PC & (word)0xff).to_ulong();
+
+				if (interrupts[0]) //Vblank
+				{
+					warning("Vblank interrupt", PC);
+					PC = 0x40;
+					ram[IF][0] = false;
+				}
+				else if (interrupts[1]) //LCDC
+				{
+					warning("LCDC interrupt", PC);
+					PC = 0x48;
+					ram[IF][1] = false;
+				}
+				else if (interrupts[2]) //Timer overflow
+				{
+					warning("Timer interrupt", PC);
+					PC = 0x50;
+					ram[IF][2] = false;
+				}
+				else if (interrupts[3]) //Serial transfer completion
+				{
+					warning("Serial interrupt", PC);
+					//Serial transfer not implemented
+					//Should never happen, but we pretend it can, just in case
+					ram[IF][3] = false;
+				}
+				else if (interrupts[4]) //Buttons
+				{
+					warning("Joypad interrupt", PC);
+					PC = 0x60;
+					ram[IF][4] = false;
+				}
+			}
+		}
+
 		//Fetch and decode instruction
 		data address = PC.to_ulong();
 		Instruction instr = disasm(address);
 
+		//Debug output for notable instructions
+		switch (instr.cmd)
+		{
+		case EI:
+		case DI:
+		case RETI:
+			warning(cmd_codes[instr.cmd], PC);
+			break;
+		}
+
 		//Increase program counter
 		PC = (address + instr.length()) & 0xffff;
 
-		//Execute
-		bool result = exec(instr);
+		bool result = false;
+		try {
+			//Execute
+			result = exec(instr);
+		}
+		catch (const ReadWriteException& e)
+		{
+			error("Read/Write size mismatch while executing instruction", (word)address);
+			debug = true;
+		}
+		catch (const WrongExecutionException& e)
+		{
+			error("Error while executing instruction " + cmd_codes[instr.cmd], (word)address);
+			debug = true;
+		}
 
 		if (debug || !result)
 		{
@@ -1736,6 +652,10 @@ bool Architecture::step(bool debug)
 			print_stack(5);
 		}
 
-		return result;
+		//Perform the change if a previoud DI or EI instruction scheduled it
+		if (instr.cmd != DI && instr.cmd != EI)
+			IME = scheduledIME;
+
+		return PC.to_ulong();
 	}
 }

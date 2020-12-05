@@ -8,28 +8,37 @@ using std::endl;
 
 mutex out_mutex;
 
-void error(string str) 
+void error(string str, bitset<16> PC)
 {
 	out_mutex.lock();
 	Color('r');
-	cout << "E> " << str << endl;
+	if(PC == 0)
+		cout << "E> " << str << endl;
+	else
+		cout << "E|" << to_hex(PC.to_ulong()) << "> " << str << endl;
 	Color('w');
 	out_mutex.unlock();
 }
 
-void warning(string str)
+void warning(string str, bitset<16> PC)
 {
 	out_mutex.lock();
 	Color('y');
-	cout << "W> " << str << endl;
+	if (PC == 0)
+		cout << "W> " << str << endl;
+	else
+		cout << "W|" << to_hex(PC.to_ulong()) << "> " << str << endl;
 	Color('w');
 	out_mutex.unlock();
 }
 
-void debug(string str)
+void debug(string str, bitset<16> PC)
 {
 	out_mutex.lock();
-	cout << "D> " << str << endl;
+	if (PC == 0)
+		cout << "E> " << str << endl;
+	else
+		cout << "D|" << to_hex(PC.to_ulong()) << "> " << str << endl;
 	out_mutex.unlock();
 }
 

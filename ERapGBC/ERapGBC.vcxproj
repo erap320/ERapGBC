@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cartridge.hpp" />
+    <ClInclude Include="exceptions.hpp" />
     <ClInclude Include="registers.hpp" />
     <ClInclude Include="architecture.hpp" />
     <ClInclude Include="screen.hpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="architecture.cpp" />
     <ClCompile Include="disasm.cpp" />
     <ClCompile Include="execution.cpp" />
+    <ClCompile Include="instructions.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>

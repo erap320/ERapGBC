@@ -170,6 +170,10 @@ void Architecture::swapCartROMBank(unsigned int selected)
 	if(selected > CART_ROM_BANKS-1)
 		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + selected);
 
+	//Can't swap with bank0, bank1 will be selected
+	if (selected == 0)
+		selected = 1;
+
 	for (data addr = 0; addr < ROM_BANK_SIZE; addr++)
 	{
 		//No need to copy data back as ROM can't be modified
@@ -178,7 +182,7 @@ void Architecture::swapCartROMBank(unsigned int selected)
 	}
 
 	currentROMBank = selected;
-	debug("Swapped cart ROM bank " + selected);
+	debug("Swapped cart ROM bank " + to_hex(selected), PC);
 }
 
 //Function to perform bank switching
@@ -198,15 +202,28 @@ void Architecture::swapCartRAMBank(unsigned short selected)
 	}
 
 	currentRAMBank = selected;
-	debug("Swapped cart RAM bank "+selected);
+	debug("Swapped cart RAM bank "+to_hex(selected), PC);
 }
 
 void Architecture::runDMA(byte a)
 {
 	data address = (word(a.to_ulong()) << BYTE_SIZE).to_ulong();
-	data end = address + 0x9F;
 	for (data i=0; i <= 0x9F; i++)
-		ram[0xFF80 + i] = ram[address + i];
+		ram[0xFE00 + i] = ram[address + i];
+
+	debug("DMA from " + to_hex(address) + " to 0xfe00", PC);
+}
+
+void Architecture::runVDMA(data src, data dst)
+{
+	data size = ((ram[HDMA5] & (byte)0x7F).to_ulong() + 1) * 16;
+	for (data i = 0; i <= size; i++)
+		ram[dst + i] = ram[src + i];
+
+	//Finished
+	ram[HDMA5] = 0xFF;
+
+	debug("VDMA from " + to_hex(src) + " to " + to_hex(dst), PC);
 }
 
 void Architecture::dump_ram()
@@ -239,7 +256,7 @@ void Architecture::print_registers()
 	cout << "B:\t" << B.to_string() << "  C:\t" << C.to_string() << "  | " << to_hex(((word)BC).to_ulong()) << endl;
 	cout << "D:\t" << D.to_string() << "  E:\t" << E.to_string() << "  | " << to_hex(((word)DE).to_ulong()) << endl;
 	cout << "H:\t" << H.to_string() << "  L:\t" << L.to_string() << "  | " << to_hex(((word)HL).to_ulong()) << endl;
-	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << endl;
+	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << " IME:" << IME << endl;
 	cout << "---------------------------------------------\n";
 	out_mutex.unlock();
 }
