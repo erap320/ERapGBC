@@ -1420,8 +1420,8 @@ Instruction disasm(data address)
 	case 0x10: {
 		if (a->ram[address + 1].to_ulong() == 0x00)
 			return Instruction{ STOP, Argument{NONE}, Argument{NONE} };
-		else
-			return Instruction{ ERR, Argument{NONE}, Argument{NONE} };
+		else //Dunno, it's not the right way but seems to work in some games
+			return Instruction{ STOP, Argument{NONE}, Argument{NONE} };
 		break;
 	}
 	case 0xF3:
@@ -1468,7 +1468,7 @@ Instruction disasm(data address)
 		break;
 	}
 	case 0xE9:
-		return Instruction{ JP, Argument{a->HL, ADDR}, Argument{NONE} };
+		return Instruction{ JP, Argument{a->HL}, Argument{NONE} };
 		break;
 	case 0x18:
 		return Instruction{ JR, Argument{a->ram[address + 1].to_ulong(), IMM}, Argument{NONE} };

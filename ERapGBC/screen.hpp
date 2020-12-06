@@ -45,7 +45,8 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 	//the equivalent of 0x9800 we use 0x1800 as offset
 	data tileAddr = 0x1800 + y * 32 + x;
 	data tileNumber = arch->videoBanks[0][tileAddr].to_ulong();
-	unsigned short palNum = arch->videoBanks[1][tileAddr].to_ulong();
+	unsigned short palNum = arch->videoBanks[1][tileAddr].to_ulong() & 7;
+	unsigned short bank = arch->videoBanks[1][tileAddr][3];
 
 	if (palNum > 7)
 	{
@@ -57,7 +58,7 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 
 	for (int i = 0; i < 4; i++)
 	{
-		paletteColors[i] = fromGBColor(arch->colorPalettes[palNum][i][0], arch->colorPalettes[palNum][i][1]);
+		paletteColors[i] = fromGBColor(arch->colorPalettes[palNum][i][1], arch->colorPalettes[palNum][i][0]);
 	}
 
 	//The base of video banks will be 0x8000 in memory, so to have
@@ -65,7 +66,7 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 	//Every tile of 8*8 2bpp uses 16 bytes 
 	tileAddr = /* 0x0000 + */ 16 * tileNumber;
 
-	byte* tileMem = &arch->videoBanks[arch->currentVideoBank][tileAddr];
+	byte* tileMem = &arch->videoBanks[bank][tileAddr];
 
 	unsigned short dots[64];
 	unsigned short bit;

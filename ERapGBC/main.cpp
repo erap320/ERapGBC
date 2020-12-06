@@ -17,15 +17,17 @@ using std::mutex;
 #define LCD_W 160
 #define LCD_H 144
 
-#define CLK_TIME std::chrono::nanoseconds(0) //1.05 MHz
-#define DOUBLE_CLK_TIME std::chrono::nanoseconds(0) //2.10 Mhz
-#define LCD_VLINE_TIME std::chrono::nanoseconds(0)
+//#define CLK_TIME std::chrono::nanoseconds(200) //1.05 MHz
+//#define DOUBLE_CLK_TIME std::chrono::nanoseconds(100) //2.10 Mhz
+#define LCD_VLINE_TIME std::chrono::microseconds(109)
 
 //#define CLK_TIME std::chrono::nanoseconds(954) //1.05 MHz
 //#define DOUBLE_CLK_TIME std::chrono::nanoseconds(477) //2.10 Mhz
 //#define LCD_VLINE_TIME std::chrono::microseconds(109)
 
 #define DEBUGGER true
+
+bool debugger = DEBUGGER;
 
 //To ensure synchronization between threads
 //that try to access the architecture simultaneously
@@ -34,9 +36,7 @@ mutex arch_mutex;
 void architecture_main(Architecture* arch)
 {
 	//SCREEN TEST
-	/*arch_mutex.lock();
-
-	arch->videoBanks[0][0] = 0x7C;
+	/*arch->videoBanks[0][0] = 0x7C;
 	arch->videoBanks[0][1] = 0x7C;
 	arch->videoBanks[0][2] = 0xC6;
 	arch->videoBanks[0][3] = 0xC6;
@@ -66,9 +66,7 @@ void architecture_main(Architecture* arch)
 
 	arch->videoBanks[1][0x1801] = 1;
 	arch->videoBanks[1][0x1802] = 2;
-	arch->videoBanks[1][0x1803] = 3;
-
-	arch_mutex.unlock();*/
+	arch->videoBanks[1][0x1803] = 3;*/
 
 	string buffer;
 
@@ -79,24 +77,19 @@ void architecture_main(Architecture* arch)
 	//debugger commands
 	bool wait = false;
 
-	bool debugger = DEBUGGER;
-
 	while (true)
 	{
 		if (wait)
 			wait = false;
 		else
 		{
-			arch_mutex.lock();
 			arch->step(debugger);
-			arch_mutex.unlock();
-
 
 			//Instruction cycle
-			if (arch->doubleSpeed)
+			/*if (arch->doubleSpeed)
 				std::this_thread::sleep_for(DOUBLE_CLK_TIME);
 			else
-				std::this_thread::sleep_for(CLK_TIME); 
+				std::this_thread::sleep_for(CLK_TIME); */
 		}
 
 		if (debugger)
@@ -117,14 +110,12 @@ void architecture_main(Architecture* arch)
 					debugger = false;
 					while (next != breakpoint && !debugger)
 					{
-						arch_mutex.lock();
 						next = arch->step(debugger);
-						arch_mutex.unlock();
 
-						if (arch->doubleSpeed)
+						/*if (arch->doubleSpeed)
 							std::this_thread::sleep_for(DOUBLE_CLK_TIME);
 						else
-							std::this_thread::sleep_for(CLK_TIME);
+							std::this_thread::sleep_for(CLK_TIME);*/
 					}
 					debugger = true;
 				}
@@ -144,14 +135,12 @@ void architecture_main(Architecture* arch)
 					debugger = false;
 					for (unsigned int i = 0; i < steps && !debugger; i++)
 					{
-						arch_mutex.lock();
 						arch->step(debugger);
-						arch_mutex.unlock();
 
-						if (arch->doubleSpeed)
+						/*if (arch->doubleSpeed)
 							std::this_thread::sleep_for(DOUBLE_CLK_TIME);
 						else
-							std::this_thread::sleep_for(CLK_TIME);
+							std::this_thread::sleep_for(CLK_TIME);*/
 					}
 					cout << endl;
 					debugger = true;
@@ -165,14 +154,12 @@ void architecture_main(Architecture* arch)
 				debugger = false;
 				while (cmd != RET && cmd != RETNZ && cmd != RETZ && cmd != RETNC && cmd != RETC && cmd != RETI && !debugger)
 				{
-					arch_mutex.lock();
 					next = arch->step(debugger);
-					arch_mutex.unlock();
 
-					if (arch->doubleSpeed)
+					/*if (arch->doubleSpeed)
 						std::this_thread::sleep_for(DOUBLE_CLK_TIME);
 					else
-						std::this_thread::sleep_for(CLK_TIME);
+						std::this_thread::sleep_for(CLK_TIME);*/
 
 					cmd = disasm(next).cmd;
 				}
@@ -199,6 +186,21 @@ void architecture_main(Architecture* arch)
 				}
 				break;
 			}
+			case 'r': {
+				arch->dump_ram();
+				wait = true;
+				break;
+			}
+			case 'v': {
+				arch->dump_video();
+				wait = true;
+				break;
+			}
+			case 'p': {
+				arch->print_palettes();
+				wait = true;
+				break;
+			}
 			}
 		}
 	}
@@ -210,7 +212,7 @@ void buttons(Architecture* arch)
 	bool pressedBefore = false;
 	bool pressedAfter = false;
 
-	bool right, left, up, down, z, x, backspace, enter;
+	bool right, left, up, down, A, B, select, start;
 
 	//Input
 	while (true)
@@ -219,12 +221,10 @@ void buttons(Architecture* arch)
 		left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
 		up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
 		down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
-		z = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
-		x = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
-		backspace = sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace);
-		enter = sf::Keyboard::isKeyPressed(sf::Keyboard::Enter);
-		
-		arch_mutex.lock();
+		A = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+		B = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
+		select = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+		start = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
 
 		if (!arch->ram[P1][4]) //Read DPAD
 		{
@@ -235,25 +235,23 @@ void buttons(Architecture* arch)
 		}
 		else if (!arch->ram[P1][5]) //Read A,B,Select;Start
 		{
-			arch->ram[P1][0] = !z;
-			arch->ram[P1][1] = !x;
-			arch->ram[P1][2] = !backspace;
-			arch->ram[P1][3] = !enter;
+			arch->ram[P1][0] = !A;
+			arch->ram[P1][1] = !B;
+			arch->ram[P1][2] = !select;
+			arch->ram[P1][3] = !start;
 		}
-		pressedAfter = right || left || up || down || z || x || backspace || enter;
+		pressedAfter = right || left || up || down || A || B || select || start;
 
 		if (!pressedBefore && pressedAfter)
 			arch->ram[IF][4] = true;
 
 		pressedBefore = pressedAfter;
 
-		arch_mutex.unlock();
-
 		//Instruction cycle
-		if (arch->doubleSpeed)
+		/*if (arch->doubleSpeed)
 			std::this_thread::sleep_for(DOUBLE_CLK_TIME);
 		else
-			std::this_thread::sleep_for(CLK_TIME);
+			std::this_thread::sleep_for(CLK_TIME);*/
 	}
 }
 
@@ -263,26 +261,35 @@ void LCDtiming(Architecture* arch)
 	while (true)
 	{
 		std::this_thread::sleep_for(LCD_VLINE_TIME);
+		if (arch->screenOn)
+		{
+			if (!debugger && arch->screenOn)
+			{
 
-		arch_mutex.lock();
+				Yline = arch->ram[LY].to_ulong();
 
-		Yline = arch->ram[LY].to_ulong();
-		
-		Yline++;
-		if (Yline >= 154)
-			Yline = 0;
+				Yline++;
+				if (Yline >= 154)
+					Yline = 0;
 
-		arch->ram[LY] = Yline;
+				arch->ram[LY] = Yline;
 
-		//Vblank interrupt
+				//Vblank interrupt
 
-		arch->ram[IF][0] = (Yline == 144);
+				if (Yline == 144)
+					arch->ram[IF][0] = true;
 
-		//Match of LYC
-		arch->ram[STAT][2] = (arch->ram[LY] == arch->ram[LYC]);
-		arch->ram[IF][1] = arch->ram[STAT][2] && arch->ram[STAT][6];
+				//Match of LYC
+				arch->ram[STAT][2] = (arch->ram[LY] == arch->ram[LYC]);
+				if (arch->ram[STAT][2] && arch->ram[STAT][6])
+					arch->ram[IF][1] = true;
+			}
+		}
+		else
+		{
+			arch->ram[LY] = 0;
+		}
 
-		arch_mutex.unlock();
 	}
 }
 
@@ -323,9 +330,7 @@ int main()
 
 		window.clear();
 
-		arch_mutex.lock();
 		drawScreen(arch, window, tilesTex);
-		arch_mutex.unlock();
 
 		for (int y = 0; y < 32; y++)
 		{

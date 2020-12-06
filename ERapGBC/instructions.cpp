@@ -107,8 +107,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong() - 2;
 			SP = stack;
 			//Copy
-			ram[stack] = (val >> BYTE_SIZE).to_ulong();
-			ram[stack + 1] = (val & (word)0xff).to_ulong();
+			ram[stack + 1] = (val >> BYTE_SIZE).to_ulong();
+			ram[stack] = (val & (word)0xff).to_ulong();
 			return true;
 		}
 		break;
@@ -122,7 +122,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		else
 		{
 			data stack = SP.to_ulong();
-			arg1.w16(word(ram[stack].to_string() + ram[stack + 1].to_string()));
+			arg1.w16(word(ram[stack + 1].to_string() + ram[stack].to_string()));
 			//Increment
 			SP = SP.to_ulong() + 2;
 			return true;
@@ -228,13 +228,13 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Sub
-		data res = A.to_ulong() - arg1.r8().to_ulong();
-		A = res & 0xffff;
+		int res = A.to_ulong() - arg1.r8().to_ulong();
+		A = ((unsigned int)res) & 0xff;
 		//Flags
 		Zflag(res == 0);
 		Nflag(1);
 		//TODO half carry
-		Cflag(A[7] != 0 || arg1.r8()[7] != 1);
+		Cflag(res < 0);
 
 		return true;
 		break;
@@ -247,13 +247,13 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		//Sub
-		data res = arg1.r8().to_ulong() - arg2.r8().to_ulong() - Cflag();
-		arg1.w8(res & 0xffff);
+		int res = arg1.r8().to_ulong() - arg2.r8().to_ulong() - Cflag();
+		arg1.w8(((unsigned int)res) & 0xff);
 		//Flags
 		Zflag(res == 0);
 		Nflag(1);
 		//TODO half carry
-		Cflag(arg1.r8()[7] != 0 || arg2.r8()[7] != 1);
+		Cflag(res < 0);
 
 		return true;
 		break;
@@ -829,7 +829,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		break;
 	}
 	case JP: {
-		if ((arg1.type != W_IMM && (arg1.type != C_REG || !arg1.address)) || arg2.type != NONE)
+		if ((arg1.type != W_IMM && arg1.type != C_REG) || arg2.type != NONE)
 		{
 			instruction_error(PC.to_ulong(), cmd, arg1, arg2);
 			return false;
@@ -982,8 +982,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		data stack = SP.to_ulong() - 2;
 		SP = stack;
 		//Copy
-		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-		ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+		ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+		ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 		//Jump
 		PC = arg1.r16();
@@ -1006,8 +1006,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong() - 2;
 			SP = stack;
 			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+			ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 			//Jump
 			PC = arg1.r16();
@@ -1031,8 +1031,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong() - 2;
 			SP = stack;
 			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+			ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 			//Jump
 			PC = arg1.r16();
@@ -1056,8 +1056,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong() - 2;
 			SP = stack;
 			//Copy
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+			ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 			//Jump
 			PC = arg1.r16();
@@ -1081,8 +1081,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 			data stack = SP.to_ulong() - 2;
 			SP = stack;
 			//Copywa
-			ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-			ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+			ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+			ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 			//Jump
 			PC = arg1.r16();
@@ -1104,8 +1104,8 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		data stack = SP.to_ulong() - 2;
 		SP = stack;
 		//Copy
-		ram[stack] = (savedPC >> BYTE_SIZE).to_ulong();
-		ram[stack + 1] = (savedPC & (word)0xff).to_ulong();
+		ram[stack + 1] = (savedPC >> BYTE_SIZE).to_ulong();
+		ram[stack] = (savedPC & (word)0xff).to_ulong();
 
 		//Jump
 		PC = arg1.r8().to_ulong();
@@ -1122,7 +1122,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//Pop
 		data stack = SP.to_ulong();
-		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+		PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 		//Increment
 		SP = SP.to_ulong() + 2;
 
@@ -1140,7 +1140,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		{
 			//Pop
 			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 			//Increment
 			SP = SP.to_ulong() + 2;
 		}
@@ -1159,7 +1159,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		{
 			//Pop
 			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 			//Increment
 			SP = SP.to_ulong() + 2;
 		}
@@ -1178,7 +1178,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		{
 			//Pop
 			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 			//Increment
 			SP = SP.to_ulong() + 2;
 		}
@@ -1197,7 +1197,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		{
 			//Pop
 			data stack = SP.to_ulong();
-			PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+			PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 			//Increment
 			SP = SP.to_ulong() + 2;
 		}
@@ -1214,7 +1214,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//Pop
 		data stack = SP.to_ulong();
-		PC = word(ram[stack].to_string() + ram[stack + 1].to_string());
+		PC = word(ram[stack + 1].to_string() + ram[stack].to_string());
 		//Increment
 		SP = SP.to_ulong() + 2;
 

@@ -304,6 +304,10 @@ public:
 	//if the processor is in double speed mode
 	bool doubleSpeed = false;
 
+	//Convenient bool that can be consulted to know
+	//if the LCDC is turned on or off
+	bool screenOn = true;
+
 	//Functions to access and modify flag register
 	bool Cflag() { return F[4]; }
 	bool Hflag() { return F[5]; }
@@ -326,6 +330,9 @@ public:
 	//Write the content of the ram in a .bin file
 	void dump_ram();
 
+	//Write the content of video ram banks in a .bin file
+	void dump_video();
+
 	//Print the contents of the cpu in the terminal
 	void print_registers();
 	
@@ -337,6 +344,9 @@ public:
 
 	//Print a human readable instruction
 	void print_instructions(data address, unsigned int rows);
+	
+	//Print color palettes
+	void print_palettes();
 
 	static Architecture* instance()
 	{

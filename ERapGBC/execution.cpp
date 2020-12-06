@@ -26,9 +26,8 @@ void address_checks(data address, byte val)
 		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
 		arch->colorPalettes[number][color][specification[0]] = val;
 
-		//Increment by adding one to bit 3, by summing 8
 		if (specification[7])
-			arch->ram[BCPS] = specification.to_ulong() + 8;
+			arch->ram[BCPS] = specification.to_ulong() + 1;
 		break;
 	}
 	case OCPD: //OBJ palette data write
@@ -38,9 +37,8 @@ void address_checks(data address, byte val)
 		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
 		arch->colorPalettes[number][color][specification[0]] = val;
 
-		//Increment by adding one to bit 3, by summing 8
 		if (specification[7])
-			arch->ram[OCPS] = specification.to_ulong() + 8;
+			arch->ram[OCPS] = specification.to_ulong() + 1;
 		break;
 	}
 	case CART_BANK_TYPE:
@@ -65,8 +63,7 @@ void address_checks(data address, byte val)
 		break;
 	case LCDC:
 	{
-		if (val[7] == 0 && arch->ram[LCDC] == 1)
-			arch->ram[LY] = 0;
+		arch->screenOn = val[7];
 		break;
 	}
 	case HDMA5:
@@ -87,7 +84,9 @@ void address_checks(data address, byte val)
 		else if (address >= 0xC000 && address <= 0xDE00)
 			arch->ram[address + 0x2000] = val;
 		else if (address >= 0x8000 && address <= 0x9FFF)
+		{
 			arch->videoBanksDirty = true;
+		}
 		break;
 	}
 	}
@@ -178,8 +177,15 @@ void Argument::w8(byte val)
 		}
 		case IMM: {
 			data address = 0xff00 + (value.immediate & 0xff);
-			if(address > 0x7FFF)
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (val & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
 				Architecture::instance()->ram[address] = val;
+			}
 
 			address_checks(address, val);
 			
@@ -187,8 +193,15 @@ void Argument::w8(byte val)
 		}
 		case REG: {
 			data address = 0xff00 + value.reg->to_ulong();
-			if (address > 0x7FFF)
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (val & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
 				Architecture::instance()->ram[address] = val;
+			}
 
 			address_checks(address, val);
 
@@ -196,8 +209,15 @@ void Argument::w8(byte val)
 		}
 		case W_REG: {
 			data address = value.w_reg->to_ulong();
-			if (address > 0x7FFF)
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (val & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
 				Architecture::instance()->ram[address] = val;
+			}
 
 			address_checks(address, val);
 
@@ -205,8 +225,15 @@ void Argument::w8(byte val)
 		}
 		case C_REG: {
 			data address = ((word)*value.c_reg).to_ulong();
-			if (address > 0x7FFF)
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (val & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
 				Architecture::instance()->ram[address] = val;
+			}
 
 			address_checks(address, val);
 
@@ -214,8 +241,15 @@ void Argument::w8(byte val)
 		}
 		case W_IMM: {
 			data address = value.immediate & 0xffff;
-			if (address > 0x7FFF)
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (val & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
 				Architecture::instance()->ram[address] = val;
+			}
 
 			address_checks(address, val);
 
@@ -563,15 +597,13 @@ data Architecture::step(bool& debug)
 			{
 				IME = false;
 
-				dump_ram();
-
 				//Push PC
 				//Decrement
 				data stack = SP.to_ulong() - 2;
 				SP = stack;
 				//Copy
-				ram[stack] = (PC >> BYTE_SIZE).to_ulong();
-				ram[stack + 1] = (PC & (word)0xff).to_ulong();
+				ram[stack + 1] = (PC >> BYTE_SIZE).to_ulong();
+				ram[stack] = (PC & (word)0xff).to_ulong();
 
 				if (interrupts[0]) //Vblank
 				{
@@ -623,6 +655,8 @@ data Architecture::step(bool& debug)
 
 		//Increase program counter
 		PC = (address + instr.length()) & 0xffff;
+
+		//cout << to_hex(address) << endl;
 
 		bool result = false;
 		try {

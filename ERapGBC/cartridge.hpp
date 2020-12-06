@@ -38,6 +38,16 @@ public:
 		}
 		rom.close();
 
+		for (unsigned int bank = 0; bank < CART_RAM_BANKS; bank++)
+		{
+			for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+			{
+				ramBanks[bank][addr] = 0xFF;
+			}
+		}
+
+		ramBanks[0][0x1FFF] = 0x37;
+
 		loaded = true;
 		return true;
 	}

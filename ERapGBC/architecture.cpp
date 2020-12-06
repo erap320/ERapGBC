@@ -37,13 +37,13 @@ Architecture::Architecture()
 
 	//Values after BIOS finished its checks
 	PC = 0x100;
-	AF = 0x11B0;
-	BC = 0x0013;
-	DE = 0x00D8;
-	HL = 0x014D;
+	AF = 0x1180;
+	BC = 0x0000;
+	DE = 0xFF56;
+	HL = 0x000D;
 	SP = 0xFFFE;
 
-	ram[P1] = 0x00;
+	ram[P1] = 0xFF;
 	ram[SC] = 0x00;
 	ram[TIMA] = 0x00;
 	ram[0xFF06] = 0x00;
@@ -124,6 +124,8 @@ void Architecture::swapWorkingBank(unsigned short selected)
 	}
 
 	currentWorkingBank = selected;
+
+	debug("Swapped Working bank " + to_hex(selected), PC);
 }
 
 void Architecture::swapVideoBank(unsigned short selected)
@@ -132,11 +134,6 @@ void Architecture::swapVideoBank(unsigned short selected)
 		error("Wrong Video RAM bank chosen, no swapping was performed: "+selected);
 
 	data base = 0x8000;
-
-	//Decrement to align with the array index
-	//If it's 0 it already selects bank 1, so we can leave it
-	if (selected > 0)
-		selected--;
 
 	for (data addr = 0; addr <= 0x1FFF; addr++)
 	{
@@ -148,6 +145,8 @@ void Architecture::swapVideoBank(unsigned short selected)
 
 	currentVideoBank = selected;
 	videoBanksDirty = false;
+
+	debug("Swapped Video bank " + to_hex(selected), PC);
 }
 
 void Architecture::updateVideoBank()
@@ -171,8 +170,8 @@ void Architecture::swapCartROMBank(unsigned int selected)
 		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + selected);
 
 	//Can't swap with bank0, bank1 will be selected
-	if (selected == 0)
-		selected = 1;
+	/*if (selected == 0)
+		selected = 1;*/
 
 	for (data addr = 0; addr < ROM_BANK_SIZE; addr++)
 	{
@@ -228,11 +227,11 @@ void Architecture::runVDMA(data src, data dst)
 
 void Architecture::dump_ram()
 {
-	ofstream dump("dump.bin", std::ios::binary);
+	ofstream dump("dump_ram.bin", std::ios::binary);
 
 	if (!dump)
 	{
-		error("Could not create dump.bin file");
+		error("Could not create dump_ram.bin file");
 		return;
 	}
 
@@ -246,6 +245,30 @@ void Architecture::dump_ram()
 	dump.close();
 }
 
+void Architecture::dump_video()
+{
+	ofstream dump0("dump_video0.bin", std::ios::binary);
+	ofstream dump1("dump_video1.bin", std::ios::binary);
+
+	if (!dump0 || !dump1)
+	{
+		error("Could not create dump_video0&1.bin files");
+		return;
+	}
+
+	uint8_t buffer;
+	for (int i = 0; i < V_BANK_SIZE; i++)
+	{
+		buffer = videoBanks[0][i].to_ulong() & 0xff;
+		dump0.write((char*)(&buffer), sizeof(uint8_t));
+		buffer = videoBanks[1][i].to_ulong() & 0xff;
+		dump1.write((char*)(&buffer), sizeof(uint8_t));
+	}
+
+	dump0.close();
+	dump1.close();
+}
+
 void Architecture::print_registers()
 {
 	out_mutex.lock();
@@ -256,7 +279,7 @@ void Architecture::print_registers()
 	cout << "B:\t" << B.to_string() << "  C:\t" << C.to_string() << "  | " << to_hex(((word)BC).to_ulong()) << endl;
 	cout << "D:\t" << D.to_string() << "  E:\t" << E.to_string() << "  | " << to_hex(((word)DE).to_ulong()) << endl;
 	cout << "H:\t" << H.to_string() << "  L:\t" << L.to_string() << "  | " << to_hex(((word)HL).to_ulong()) << endl;
-	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << " IME:" << IME << endl;
+	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << " IME:" << IME << " Speed:" << doubleSpeed << endl;
 	cout << "---------------------------------------------\n";
 	out_mutex.unlock();
 }
@@ -268,11 +291,11 @@ void Architecture::print_stack(unsigned int rows)
 	data addr = SP.to_ulong();
 
 	printf("0x%.4x  | ", addr);
-	cout << ram[addr].to_string() << "  <- SP" << endl;
+	printf("0x%.2x  <- SP\n", ram[addr].to_ulong());
 	for (unsigned int i = 1; i < rows && addr+i <= 0xffff; i++)
 	{
 		printf("0x%.4x  | ", addr+i);
-		cout << ram[addr + i].to_string() << endl;
+		printf("0x%.2x \n", ram[addr + i].to_ulong());
 	}
 	cout << "---------------------------------------------\n";
 	out_mutex.unlock();
@@ -549,5 +572,35 @@ void Architecture::print_instructions(data address, unsigned int rows)
 		//Increase address
 		address += instr.length();
 	}
+	out_mutex.unlock();
+}
+
+void Architecture::print_palettes()
+{
+	out_mutex.lock();
+	cout << "\n################## PALETTES #################\n";
+	cout << "> TILES\n";
+	for (unsigned int i = 0; i < 8; i++)
+	{
+		cout << i << ": ";
+		for (unsigned int j = 0; j < 4; j++)
+		{
+			printf("0x%.2x", colorPalettes[i][j][0]);
+			printf("%.2x  ", colorPalettes[i][j][1]);
+		}
+		cout << endl;
+	}
+	cout << "> OBJS\n";
+	for (unsigned int i = 0; i < 8; i++)
+	{
+		cout << i << ": ";
+		for (unsigned int j = 0; j < 4; j++)
+		{
+			printf("0x%.2x", objPalettes[i][j][0]);
+			printf("%.2x  ", objPalettes[i][j][1]);
+		}
+		cout << endl;
+	}
+	cout << "---------------------------------------------\n";
 	out_mutex.unlock();
 }
