@@ -36,7 +36,7 @@ void debug(string str, bitset<16> PC)
 {
 	out_mutex.lock();
 	if (PC == 0)
-		cout << "E> " << str << endl;
+		cout << "D> " << str << endl;
 	else
 		cout << "D|" << to_hex(PC.to_ulong()) << "> " << str << endl;
 	out_mutex.unlock();

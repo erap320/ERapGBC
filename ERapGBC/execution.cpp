@@ -35,7 +35,7 @@ void address_checks(data address, byte val)
 		byte specification = arch->ram[OCPS];
 		unsigned short color = ((specification & (byte)7) >> 1).to_ulong();
 		unsigned short number = ((specification & (byte)0x3F) >> 3).to_ulong();
-		arch->colorPalettes[number][color][specification[0]] = val;
+		arch->objPalettes[number][color][specification[0]] = val;
 
 		if (specification[7])
 			arch->ram[OCPS] = specification.to_ulong() + 1;
@@ -549,36 +549,20 @@ data Architecture::step(bool& debug)
 {
 	if (IN_STOP)
 	{
-		if (debug)
-			warning("STOP");
-		else
-		{
-			out_mutex.lock();
-			cout << "\rSTOP";
-			out_mutex.unlock();
-		}
-
 		//Change processor speed
 		ram[KEY1][7] = ram[KEY1][0];
 		doubleSpeed = ram[KEY1][0];
 
 		//Stay in STOP mode until a button is pressed
-		if (ram[IF][4])
-			IN_STOP = false;
+		/*if (ram[IF][4])
+			IN_STOP = false;*/
+
+		IN_STOP = false;
 
 		return true;
 	}
 	if (IN_HALT)
 	{
-		if (debug)
-			warning("HALT");
-		else
-		{
-			out_mutex.lock();
-			cout << "\rHALT";
-			out_mutex.unlock();
-		}
-
 		//Stay in HALT mode until an interrupt happens
 		if ((ram[IF] & (byte)0x1f) != 0)
 			IN_HALT = false;
@@ -649,6 +633,8 @@ data Architecture::step(bool& debug)
 		case EI:
 		case DI:
 		case RETI:
+		case STOP:
+		case HALT:
 			warning(cmd_codes[instr.cmd], PC);
 			break;
 		}

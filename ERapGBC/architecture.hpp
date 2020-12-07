@@ -347,6 +347,9 @@ public:
 	
 	//Print color palettes
 	void print_palettes();
+	
+	//Print currently used banks
+	void print_banks();
 
 	static Architecture* instance()
 	{

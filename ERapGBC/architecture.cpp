@@ -585,8 +585,8 @@ void Architecture::print_palettes()
 		cout << i << ": ";
 		for (unsigned int j = 0; j < 4; j++)
 		{
-			printf("0x%.2x", colorPalettes[i][j][0]);
-			printf("%.2x  ", colorPalettes[i][j][1]);
+			printf("0x%.2x", colorPalettes[i][j][1]);
+			printf("%.2x  ", colorPalettes[i][j][0]);
 		}
 		cout << endl;
 	}
@@ -596,11 +596,23 @@ void Architecture::print_palettes()
 		cout << i << ": ";
 		for (unsigned int j = 0; j < 4; j++)
 		{
-			printf("0x%.2x", objPalettes[i][j][0]);
-			printf("%.2x  ", objPalettes[i][j][1]);
+			printf("0x%.2x", objPalettes[i][j][1]);
+			printf("%.2x  ", objPalettes[i][j][0]);
 		}
 		cout << endl;
 	}
+	cout << "---------------------------------------------\n";
+	out_mutex.unlock();
+}
+
+void Architecture::print_banks()
+{
+	out_mutex.lock();
+	cout << "\n################### BANKS ###################\n";
+	cout << "> Work RAM\t(0xD000 - 0xDFFF): " << to_hex(currentWorkingBank, true) << endl;
+	cout << "> Video RAM\t(0x8000 - 0x9FFF): " << to_hex(currentVideoBank, true) << endl;
+	cout << "> Cart ROM\t(0x4000 - 0x7FFF): " << to_hex(currentROMBank, true) << endl;
+	cout << "> Cart RAM\t(0xA000 - 0xBFFF): " << to_hex(currentRAMBank, true) << endl;
 	cout << "---------------------------------------------\n";
 	out_mutex.unlock();
 }
