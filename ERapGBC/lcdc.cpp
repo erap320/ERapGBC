@@ -1,0 +1,93 @@
+#include "architecture.hpp"
+
+#define HBLANK_CLKS 457
+#define MODE2_CLKS 80
+#define MODE3_CLKS 230
+#define MODE3_END 310 //MODE2 + MODE3
+#define MODE0_CLKS 146
+#define VBLANK_LINES 144
+#define MAX_V_LINES 153
+
+void Architecture::lcdc()
+{
+	if (screenOn)
+	{
+		unsigned short Yline = ram[LY].to_ulong();
+		if (time >= HBLANK_CLKS)
+		{
+			Yline++;
+
+			if (Yline == VBLANK_LINES) //Mode 1
+			{
+				ram[STAT][1] = 0;
+				ram[STAT][0] = 1;
+				lcdcMode = 1;
+
+				ram[IF][0] = true;
+
+				//Also as LCDC interrupt
+				if (ram[STAT][4])
+					ram[IF][1] = true;
+			}
+			else if (Yline > MAX_V_LINES)
+				Yline = 0;
+
+			ram[LY] = Yline;
+
+			//Match of LYC
+			ram[STAT][2] = (ram[LY] == ram[LYC]);
+
+			if (ram[STAT][2] && ram[STAT][6])//Compare interrupt enabled
+				ram[IF][1] = true;
+
+			time = time % HBLANK_CLKS;
+		}
+
+		if (Yline < VBLANK_LINES)
+		{
+			if (time < MODE2_CLKS) //Mode 2
+			{
+				if (lcdcMode != 2)
+				{
+					ram[STAT][1] = 1;
+					ram[STAT][0] = 0;
+					lcdcMode = 2;
+
+					//Mode 2 interrupt
+					if (ram[STAT][5])
+						ram[IF][1] = true;
+				}
+			}
+			else if (time < MODE3_END) //Mode 3
+			{
+				if (lcdcMode != 3)
+				{
+					ram[STAT][1] = 1;
+					ram[STAT][0] = 1;
+					lcdcMode = 3;
+				}
+			}
+			else if (time < HBLANK_CLKS) //Mode 0
+			{
+				if (lcdcMode != 0)
+				{
+					ram[STAT][1] = 0;
+					ram[STAT][0] = 0;
+					lcdcMode = 0;
+
+					//Hblank interrupt
+					if (ram[STAT][3])
+						ram[IF][1] = true;
+				}
+			}
+		}
+	}
+	else
+	{
+		//Ready to restart from 0
+		ram[LY] = 0;
+		ram[STAT][1] = 0;
+		ram[STAT][0] = 0;
+		lcdcMode = 0;
+	}
+}

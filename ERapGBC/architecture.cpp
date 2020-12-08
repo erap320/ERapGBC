@@ -6,35 +6,10 @@ using std::ofstream;
 using std::cout;
 using std::endl;
 
-#define BIOS_FILENAME "gbc_bios.bin"
-
 Architecture* Architecture::singleton = NULL;
 
 Architecture::Architecture()
 {
-	//Skip bios for now
-	/*
-	ifstream bios(BIOS_FILENAME, std::ios::in | std::ios::binary);
-	if (!bios)
-	{
-		error("Can't open BIOS file");
-		return;
-	}
-
-	data addr = 0;
-	char buffer;
-	while (!bios.eof())
-	{
-		bios.read(&buffer, 1);
-		ram[addr] = (byte)buffer;
-
-		addr++;
-	}
-	bios.close();
-
-	debug("BIOS loaded!");
-	*/
-
 	//Values after BIOS finished its checks
 	PC = 0x100;
 	AF = 0x1180;
@@ -67,6 +42,7 @@ Architecture::Architecture()
 	ram[0xFF25] = 0xF3;
 	ram[0xFF26] = 0xF1;
 	ram[LCDC] = 0x91;
+	ram[STAT] = 0x80;
 	ram[SCY] = 0x00;
 	ram[SCX] = 0x00;
 	ram[LYC] = 0x00;
@@ -280,7 +256,7 @@ void Architecture::print_registers()
 	cout << "D:\t" << D.to_string() << "  E:\t" << E.to_string() << "  | " << to_hex(((word)DE).to_ulong()) << endl;
 	cout << "H:\t" << H.to_string() << "  L:\t" << L.to_string() << "  | " << to_hex(((word)HL).to_ulong()) << endl;
 	cout << "Flags: Z:" << Zflag() << " N:" << Nflag() << " H:" << Hflag() << " C:" << Cflag() << " IME:" << IME << " Speed:" << doubleSpeed << endl;
-	cout << "---------------------------------------------\n";
+	cout << "Time:" << time << " LY:" << to_hex(ram[LY].to_ulong(), true) << " STAT:" << ram[STAT].to_string() << "|" << to_hex(ram[STAT].to_ulong(), true) << endl;
 	out_mutex.unlock();
 }
 
@@ -438,7 +414,7 @@ string addrName(data addr, bool byte, bool indirect)
 
 void Architecture::print_instructions(data address, unsigned int rows)
 {
-	Instruction instr = Instruction{ERR};
+	Instruction instr = Instruction{ERR, 1};
 
 	data currentPC = PC.to_ulong();
 

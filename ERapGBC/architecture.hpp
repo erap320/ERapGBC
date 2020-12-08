@@ -206,12 +206,14 @@ public:
 	Command cmd;
 	Argument arg1;
 	Argument arg2;
+	unsigned short delay;
 
-	Instruction(Command c, Argument a1 = Argument{ NONE }, Argument a2 = Argument{ NONE })
+	Instruction(Command c, unsigned short del, Argument a1 = Argument{ NONE }, Argument a2 = Argument{ NONE })
 	{
 		cmd = c;
 		arg1 = a1;
 		arg2 = a2;
+		delay = del;
 	}
 
 	//Length of the binary instruction in bytes
@@ -232,6 +234,8 @@ class Architecture
 	Architecture();
 
 public:
+	data time = 0; //Counted in clock cycles (NOP = 4)
+
 	byte A, F, B, C, D, E, H, L;
 	word PC, SP;
 
@@ -323,6 +327,10 @@ public:
 	//Returns false if there was an error while executing the instruction
 	bool exec(Instruction i);
 	bool exec(Command cmd, Argument arg1 = Argument{ NONE }, Argument arg2 = Argument{ NONE });
+
+	//Manage display related aspects
+	void lcdc();
+	unsigned short lcdcMode = 0;
 
 	//Execute one instruction pointed by PC
 	data step(bool& debug);

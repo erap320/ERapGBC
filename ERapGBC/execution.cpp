@@ -64,6 +64,9 @@ void address_checks(data address, byte val)
 	case LCDC:
 	{
 		arch->screenOn = val[7];
+		//Reset timer when we turn on the screen again
+		if (arch->screenOn)
+			arch->time = 0;
 		break;
 	}
 	case HDMA5:
@@ -100,6 +103,7 @@ byte Argument::r8()
 		{
 		case NONE: {
 			error("Can't read from NONE argument");
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -125,6 +129,7 @@ byte Argument::r8()
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -136,6 +141,7 @@ byte Argument::r8()
 		{
 		case NONE: {
 			error("Can't read from NONE argument");
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -158,6 +164,7 @@ byte Argument::r8()
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -173,6 +180,7 @@ void Argument::w8(byte val)
 		{
 		case NONE: {
 			error("Can't write value to NONE argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case IMM: {
@@ -257,6 +265,7 @@ void Argument::w8(byte val)
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			break;
 		}
 		}
@@ -267,11 +276,13 @@ void Argument::w8(byte val)
 		{
 		case NONE: {
 			error("Can't write value to NONE argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case IMM:
 		case W_IMM: {
 			error("Can't write value to IMM argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case REG: {
@@ -287,6 +298,7 @@ void Argument::w8(byte val)
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			break;
 		}
 		}
@@ -301,6 +313,7 @@ word Argument::r16()
 		{
 		case NONE: {
 			error("Can't read from NONE argument");
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -336,6 +349,7 @@ word Argument::r16()
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -347,6 +361,7 @@ word Argument::r16()
 		{
 		case NONE: {
 			error("Can't read from NONE argument");
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -372,6 +387,7 @@ word Argument::r16()
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			return 0;
 			break;
 		}
@@ -387,120 +403,27 @@ void Argument::w16(word val)
 		{
 		case NONE: {
 			error("Can't write value to NONE argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case IMM: {
-			Architecture* arch = Architecture::instance();
-			data addr = 0xff00 + (value.immediate & 0xff);
-			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-
-			//RAM echo emulation
-			if (addr >= 0xE000 && addr <= 0xFE00)
-			{
-				addr -= 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-			else if (addr >= 0xC000 && addr <= 0xDE00)
-			{
-				addr += 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
+			error("Can't write word to memory");
+			throw WrongExecutionException();
 
 			break;
 		}
-		case REG: {
-			Architecture* arch = Architecture::instance();
-			data addr = 0xff00 + value.reg->to_ulong();
-			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-
-			//RAM echo emulation
-			if (addr >= 0xE000 && addr <= 0xFE00)
-			{
-				addr -= 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-			else if (addr >= 0xC000 && addr <= 0xDE00)
-			{
-				addr += 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-
-			break;
-		}
-		case W_REG: {
-			Architecture* arch = Architecture::instance();
-			data addr = value.w_reg->to_ulong();
-			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-
-			//RAM echo emulation
-			if (addr >= 0xE000 && addr <= 0xFE00)
-			{
-				addr -= 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-			else if (addr >= 0xC000 && addr <= 0xDE00)
-			{
-				addr += 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-
-			break;
-		}
-		case C_REG: {
-			Architecture* arch = Architecture::instance();
-			data addr = ((word)*value.c_reg).to_ulong();
-			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-
-			//RAM echo emulation
-			if (addr >= 0xE000 && addr <= 0xFE00)
-			{
-				addr -= 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-			else if (addr >= 0xC000 && addr <= 0xDE00)
-			{
-				addr += 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-
-			break;
-		}
+		case REG:
+		case W_REG:
+		case C_REG:
 		case W_IMM: {
-			Architecture* arch = Architecture::instance();
-			data addr = value.immediate & 0xffff;
-			arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-			arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-
-			//RAM echo emulation
-			if (addr >= 0xE000 && addr <= 0xFE00)
-			{
-				addr -= 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
-			else if (addr >= 0xC000 && addr <= 0xDE00)
-			{
-				addr += 0x2000;
-				arch->ram[addr] = (val >> BYTE_SIZE).to_ulong();
-				arch->ram[addr + 1] = (val & (word)0xff).to_ulong();
-			}
+			error("Can't write word to memory");
+			throw WrongExecutionException();
 
 			break;
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			break;
 		}
 		}
@@ -511,11 +434,13 @@ void Argument::w16(word val)
 		{
 		case NONE: {
 			error("Can't write value to NONE argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case IMM:
 		case W_IMM: {
 			error("Can't write value to IMM argument: " + val.to_string());
+			throw WrongExecutionException();
 			break;
 		}
 		case REG: {
@@ -534,6 +459,7 @@ void Argument::w16(word val)
 		}
 		default: {
 			error("Invalid argument type: " + type);
+			throw WrongExecutionException();
 			break;
 		}
 		}
@@ -559,13 +485,57 @@ data Architecture::step(bool& debug)
 
 		IN_STOP = false;
 
+		//And advance time
+		if (doubleSpeed)
+			time += 2;
+		else
+			time += 4;
+
+		lcdc();
+
+		data address = PC.to_ulong();
+		Instruction instr = disasm(address);
+		if (debug)
+		{
+			print_registers();
+
+			if (PC.to_ulong() != address + instr.length())
+				print_instructions(PC.to_ulong(), 5);
+			else
+				print_instructions(address, 5);
+
+			print_stack(5);
+		}
+
 		return true;
 	}
-	if (IN_HALT)
+	else if (IN_HALT)
 	{
 		//Stay in HALT mode until an interrupt happens
 		if ((ram[IF] & (byte)0x1f) != 0)
 			IN_HALT = false;
+
+		//And advance time
+		if (doubleSpeed)
+			time += 2;
+		else
+			time += 4;
+
+		lcdc();
+
+		data address = PC.to_ulong();
+		Instruction instr = disasm(address);
+		if (debug)
+		{
+			print_registers();
+
+			if (PC.to_ulong() != address + instr.length())
+				print_instructions(PC.to_ulong(), 5);
+			else
+				print_instructions(address, 5);
+
+			print_stack(5);
+		}
 
 		return true;
 	}
@@ -633,8 +603,6 @@ data Architecture::step(bool& debug)
 		case EI:
 		case DI:
 		case RETI:
-		case STOP:
-		case HALT:
 			warning(cmd_codes[instr.cmd], PC);
 			break;
 		}
@@ -659,6 +627,16 @@ data Architecture::step(bool& debug)
 			error("Error while executing instruction " + cmd_codes[instr.cmd], (word)address);
 			debug = true;
 		}
+
+		//Convert machine cycles to clock cycles
+		//And advance time
+		if (doubleSpeed)
+			time += instr.delay * 2;
+		else
+			time += instr.delay * 4;
+
+		//Manage display
+		lcdc();
 
 		if (debug || !result)
 		{

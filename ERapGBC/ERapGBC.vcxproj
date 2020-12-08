@@ -158,6 +158,7 @@
     <ClCompile Include="disasm.cpp" />
     <ClCompile Include="execution.cpp" />
     <ClCompile Include="instructions.cpp" />
+    <ClCompile Include="lcdc.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>

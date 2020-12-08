@@ -349,8 +349,16 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		case W_REG:
 		case C_REG:
-			res = arg1.r16().to_ulong() + 1;
-			arg1.w16(res & 0xffff);
+			if (arg1.address)
+			{
+				res = arg1.r8().to_ulong() + 1;
+				arg1.w8(res & 0xff);
+			}
+			else
+			{
+				res = arg1.r16().to_ulong() + 1;
+				arg1.w16(res & 0xffff);
+			}
 			break;
 		}
 		//Flags
@@ -383,8 +391,16 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 		case W_REG:
 		case C_REG: {
-			res = arg1.r16().to_ulong() - 1;
-			arg1.w16(res & 0xffff);
+			if (arg1.address)
+			{
+				res = arg1.r8().to_ulong() - 1;
+				arg1.w8(res & 0xff);
+			}
+			else
+			{
+				res = arg1.r16().to_ulong() - 1;
+				arg1.w16(res & 0xffff);
+			}
 			break;
 		}
 		}
@@ -513,6 +529,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		IN_HALT = true;
+		warning("HALT", PC);
 
 		return true;
 		break;
@@ -525,6 +542,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		IN_STOP = true;
+		warning("STOP", PC);
 
 		return true;
 		break;
