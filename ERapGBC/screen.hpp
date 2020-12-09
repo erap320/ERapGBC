@@ -6,6 +6,9 @@
 #define TILE_H 8
 #define PIXEL_BYTES 4
 
+#define H_TILES 20
+#define V_TILES 20
+
 struct RGB
 {
 	sf::Uint8 red, green, blue;
@@ -41,12 +44,26 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 		return;
 	}
 
-	//The base of video banks will be 0x8000 in memory, so to have
-	//the equivalent of 0x9800 we use 0x1800 as offset
-	data tileAddr = 0x1800 + y * 32 + x;
-	data tileNumber = arch->videoBanks[0][tileAddr].to_ulong();
-	unsigned short palNum = arch->videoBanks[1][tileAddr].to_ulong() & 7;
-	unsigned short bank = arch->videoBanks[1][tileAddr][3];
+	byte lcdcReg = arch->ram[LCDC];
+
+	///////////////////////////////////////////////////////////////// BG rendering
+
+	//The base of video banks will be 0x8000 in memory, so we use
+	//an appropriate offset for internal indexing
+	data tileOffset = y * 32 + x;
+
+	if (lcdcReg[6])
+		tileOffset += 0x1800; // 0x9800
+	else
+		tileOffset += 0x1C00; // 0x9C00
+	
+	data tileNumber = arch->videoBanks[0][tileOffset].to_ulong();
+
+	byte tileAttributes = arch->videoBanks[1][tileOffset];
+	unsigned short palNum = tileAttributes.to_ulong() & 7;
+	unsigned short bank = tileAttributes[3];
+	bool hFlip = tileAttributes[5];
+	bool vFlip = tileAttributes[6];
 
 	if (palNum > 7)
 	{
@@ -64,7 +81,19 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 	//The base of video banks will be 0x8000 in memory, so to have
 	//the equivalent we use 0 offset
 	//Every tile of 8*8 2bpp uses 16 bytes 
-	tileAddr = /* 0x0000 + */ 16 * tileNumber;
+	data tileAddr;
+	if (lcdcReg[4]) // 8000 mode
+		tileAddr = /* 0x0000 + */ 16 * tileNumber;
+	else // 8800 mode
+	{
+		if (tileNumber <= 127)
+			tileAddr = 0x1000 + (16 * tileNumber);
+		else
+		{
+			tileNumber -= 128;
+			tileAddr = 0x0800 + (16 * tileNumber);
+		}
+	}
 
 	byte* tileMem = &arch->videoBanks[bank][tileAddr];
 
@@ -73,8 +102,16 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 	int by;
 	for (int i = 0; i < 64; i++)
 	{
-		by = (i/8) * 2;
-		bit = 7 - (i % 8);
+		if(vFlip)
+			by = (7-(i/8)) * 2;
+		else
+			by = (i/8) * 2;
+
+		if(hFlip)
+			bit = i % 8;
+		else
+			bit = 7 - (i % 8);
+
 		dots[i] = tileMem[by][bit] + 2*tileMem[by+1][bit];
 	}
 
@@ -101,11 +138,11 @@ void drawTile(Architecture* arch, sf::RenderWindow& const window, unsigned short
 void drawScreen(Architecture* arch, sf::RenderWindow& const window, sf::Texture* tiles)
 {
 	arch->updateVideoBank();
-	for (int y = 0; y < 32; y++)
+	for (int y = 0; y < V_TILES; y++)
 	{
-		for (int x = 0; x < 32; x++)
+		for (int x = 0; x < H_TILES; x++)
 		{
-			drawTile(arch, window, x, y, &tiles[y*32+x]);
+			drawTile(arch, window, x, y, &tiles[y*V_TILES+x]);
 		}
 	}
 }

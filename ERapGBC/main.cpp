@@ -208,8 +208,8 @@ int main()
 	thread processing(architecture_main, arch);
 	processing.detach();
 	
-	sf::Texture tilesTex[32 * 32];
-	sf::Sprite tiles[32 * 32];
+	sf::Texture tilesTex[H_TILES * V_TILES];
+	sf::Sprite tiles[H_TILES * V_TILES];
 
 	bool buttonsPressed = false;
 
@@ -233,11 +233,11 @@ int main()
 			drawScreen(arch, window, tilesTex);
 		}
 
-		for (int y = 0; y < 32; y++)
+		for (int y = 0; y < V_TILES; y++)
 		{
-			for (int x = 0; x < 32; x++)
+			for (int x = 0; x < H_TILES; x++)
 			{
-				index = y * 32 + x;
+				index = y * V_TILES + x;
 				tiles[index].setTexture(tilesTex[index]);
 				tiles[index].setPosition(x * 8, y * 8);
 				window.draw(tiles[index]);
