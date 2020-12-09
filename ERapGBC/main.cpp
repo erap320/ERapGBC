@@ -208,10 +208,18 @@ int main()
 	thread processing(architecture_main, arch);
 	processing.detach();
 	
-	sf::Texture tilesTex[H_TILES * V_TILES];
-	sf::Sprite tiles[H_TILES * V_TILES];
+	sf::Texture BGtilesTex[H_TILES * V_TILES];
+	sf::Sprite BGtiles[H_TILES * V_TILES];
+
+	sf::Texture WINtilesTex[H_TILES * V_TILES];
+	sf::Sprite WINtiles[H_TILES * V_TILES];
+
+	sf::Texture spritesTex[SPRITES_NUM];
+	sf::Sprite sprites[SPRITES_NUM];
 
 	bool buttonsPressed = false;
+	bool winEnabled = false;
+	bool spritesEnabled = false;
 
 	//Window loop
 	unsigned int index;
@@ -230,7 +238,16 @@ int main()
 
 		if (arch->ram[LY].to_ulong() < 144)
 		{
-			drawScreen(arch, window, tilesTex);
+			winEnabled = arch->ram[LCDC][5];
+			spritesEnabled = arch->ram[LCDC][1];
+
+			drawScreen(arch, BGtilesTex, BG);
+
+			if (winEnabled)
+				drawScreen(arch, WINtilesTex, WIN);
+
+			if (spritesEnabled)
+				drawSprites(arch, spritesTex, sprites);
 		}
 
 		for (int y = 0; y < V_TILES; y++)
@@ -238,9 +255,25 @@ int main()
 			for (int x = 0; x < H_TILES; x++)
 			{
 				index = y * V_TILES + x;
-				tiles[index].setTexture(tilesTex[index]);
-				tiles[index].setPosition(x * 8, y * 8);
-				window.draw(tiles[index]);
+
+				BGtiles[index].setTexture(BGtilesTex[index]);
+				BGtiles[index].setPosition(x * 8, y * 8);
+				window.draw(BGtiles[index]);
+
+				if (winEnabled)
+				{
+					WINtiles[index].setTexture(WINtilesTex[index]);
+					WINtiles[index].setPosition(x * 8, y * 8);
+					window.draw(WINtiles[index]);
+				}
+			}
+		}
+
+		if (spritesEnabled)
+		{
+			for (int i = 0; i < SPRITES_NUM; i++)
+			{
+				window.draw(sprites[i]);
 			}
 		}
 

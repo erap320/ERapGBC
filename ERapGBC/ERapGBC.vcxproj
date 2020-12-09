@@ -23,7 +23,6 @@
     <ProjectGuid>{0C129C72-9D1C-475A-A935-E2E2D2108F4C}</ProjectGuid>
     <RootNamespace>ERapGBC</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-	<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
