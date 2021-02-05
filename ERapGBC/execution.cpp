@@ -80,6 +80,23 @@ void address_checks(data address, byte val)
 		arch->runVDMA(source, destination);
 		break;
 	}
+	case P1:
+	{
+		if (!arch->ram[P1][4]) //Read DPAD
+		{
+			arch->ram[P1][0] = !arch->right;
+			arch->ram[P1][1] = !arch->left;
+			arch->ram[P1][2] = !arch->up;
+			arch->ram[P1][3] = !arch->down;
+		}
+		if (!arch->ram[P1][5]) //Read A,B,Select;Start
+		{
+			arch->ram[P1][0] = !arch->Abtn;
+			arch->ram[P1][1] = !arch->Bbtn;
+			arch->ram[P1][2] = !arch->select;
+			arch->ram[P1][3] = !arch->start;
+		}
+	}
 	default:
 	{
 		if (address >= 0xE000 && address <= 0xFE00)
@@ -512,7 +529,7 @@ data Architecture::step(bool& debug)
 	else if (IN_HALT)
 	{
 		//Stay in HALT mode until an interrupt happens
-		if ((ram[IF] & (byte)0x1f) != 0)
+		if ( (ram[IF] & ram[IE] & (byte)0x1f) != 0)
 			IN_HALT = false;
 
 		//And advance time

@@ -154,10 +154,12 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		switch (arg2.type)
 		{
 		case REG:
+		case IMM:
 			val2 = arg2.r8().to_ulong();
 			break;
 		case W_REG:
 		case C_REG:
+		case W_IMM:
 			val2 = arg2.r16().to_ulong();
 			break;
 		}

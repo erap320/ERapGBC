@@ -162,34 +162,20 @@ void architecture_main(Architecture* arch)
 
 bool check_buttons(Architecture* arch, bool pressedBefore)
 {
-	bool right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-	bool left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-	bool up = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
-	bool down = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-	bool A = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
-	bool B = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
-	bool select = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
-	bool start = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
+	arch->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+	arch->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+	arch->up = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+	arch->down = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+	arch->Abtn = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
+	arch->Bbtn = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
+	arch->select = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
+	arch->start = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
 
-	if (!arch->ram[P1][4]) //Read DPAD
-	{
-		arch->ram[P1][0] = !right;
-		arch->ram[P1][1] = !left;
-		arch->ram[P1][2] = !up;
-		arch->ram[P1][3] = !down;
-	}
-	else if (!arch->ram[P1][5]) //Read A,B,Select;Start
-	{
-		arch->ram[P1][0] = !A;
-		arch->ram[P1][1] = !B;
-		arch->ram[P1][2] = !select;
-		arch->ram[P1][3] = !start;
-	}
-	bool pressedAfter = right || left || up || down || A || B || select || start;
+	bool pressedAfter = arch->right || arch->left || arch->up || arch->down || arch->Abtn || arch->Bbtn || arch->select || arch->start;
 
 	if (!pressedBefore && pressedAfter)
 		arch->ram[IF][4] = true;
-
+	
 	return pressedAfter;
 }
 
@@ -237,7 +223,9 @@ int main(int argc, char* argv[])
 				window.close();
 		}
 
+		arch_mutex.lock();
 		buttonsPressed = check_buttons(arch, buttonsPressed);
+		arch_mutex.unlock();
 
 		window.clear();
 

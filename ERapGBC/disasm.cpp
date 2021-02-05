@@ -844,9 +844,9 @@ Instruction disasm(data address)
 		case 0x46:
 			return Instruction{ BIT, 4, Argument{0, IMM}, Argument{a->HL, ADDR} };
 			break;
-		/*case 0x1F:
+		case 0x4F:
 			return Instruction{ BIT, 2, Argument{1, IMM}, Argument{a->A} };
-			break;*/
+			break;
 		case 0x48:
 			return Instruction{ BIT, 2, Argument{1, IMM}, Argument{a->B} };
 			break;
@@ -1551,6 +1551,9 @@ Instruction disasm(data address)
 		break;
 	case 0xD9:
 		return Instruction{ RETI, 2, Argument{NONE}, Argument{NONE} };
+		break;
+	case 0xDE:
+		return Instruction{ SBC, 2, Argument{a->A}, Argument{a->ram[address + 1].to_ulong(), IMM} };
 		break;
 	}
 }

@@ -293,6 +293,9 @@ public:
 	//2 - high (0) and low (1)
 	byte objPalettes[8][4][2];
 
+	//Last available buttons values
+	bool Abtn, Bbtn, start, select, up, down, left, right;
+
 	//Game cartridge
 	Cartridge cart;
 	unsigned int currentROMBank = 1;
