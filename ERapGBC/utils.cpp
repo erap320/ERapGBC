@@ -35,10 +35,12 @@ void warning(string str, bitset<16> PC)
 void debug(string str, bitset<16> PC)
 {
 	out_mutex.lock();
+	Color('g');
 	if (PC == 0)
 		cout << "D> " << str << endl;
 	else
 		cout << "D|" << to_hex(PC.to_ulong()) << "> " << str << endl;
+	Color('w');
 	out_mutex.unlock();
 }
 

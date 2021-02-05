@@ -10,8 +10,8 @@ using std::string;
 using std::to_string;
 
 #define RAM_SIZE 65536
-#define W_BANK_SIZE 0xFFF
-#define V_BANK_SIZE 0x1FFF
+#define W_BANK_SIZE 0x1000
+#define V_BANK_SIZE 0x2000
 
 //Forward definition
 class Architecture;

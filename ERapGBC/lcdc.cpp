@@ -89,5 +89,6 @@ void Architecture::lcdc()
 		ram[STAT][1] = 0;
 		ram[STAT][0] = 0;
 		lcdcMode = 0;
+		time = 0;
 	}
 }
