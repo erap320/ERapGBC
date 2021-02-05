@@ -148,6 +148,7 @@
     <ClInclude Include="exceptions.hpp" />
     <ClInclude Include="registers.hpp" />
     <ClInclude Include="architecture.hpp" />
+    <ClInclude Include="resources.hpp" />
     <ClInclude Include="screen.hpp" />
     <ClInclude Include="types.hpp" />
     <ClInclude Include="utils.hpp" />

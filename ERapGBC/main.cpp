@@ -1,3 +1,4 @@
+#include "resources.hpp"
 #include "architecture.hpp"
 #include "screen.hpp"
 #include <iostream>
@@ -199,6 +200,9 @@ int main()
 	sf::RenderWindow window(sf::VideoMode(LCD_W, LCD_H), "ERapGBC");
 	window.setSize(sf::Vector2u(LCD_W*3, LCD_H*3));
 	window.setVerticalSyncEnabled(true);
+	sf::Image icon;
+	icon.loadFromMemory(window_icon, window_icon_size);
+	window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
 	//Create architecture and load rom
 	Architecture* arch = Architecture::instance();
