@@ -12,8 +12,6 @@ using std::endl;
 using std::thread;
 using std::mutex;
 
-#define ROM_FILENAME "picross.gbc"
-
 #define LCD_W 160
 #define LCD_H 144
 
@@ -195,7 +193,7 @@ bool check_buttons(Architecture* arch, bool pressedBefore)
 	return pressedAfter;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
 	sf::RenderWindow window(sf::VideoMode(LCD_W, LCD_H), "ERapGBC");
 	window.setSize(sf::Vector2u(LCD_W*3, LCD_H*3));
@@ -206,7 +204,10 @@ int main()
 
 	//Create architecture and load rom
 	Architecture* arch = Architecture::instance();
-	arch->loadROM(ROM_FILENAME);
+
+	//ROM name from arguments
+	if (argc > 1)
+		arch->loadROM(string(argv[1]));
 
 	//Start the "CPU"
 	thread processing(architecture_main, arch);
