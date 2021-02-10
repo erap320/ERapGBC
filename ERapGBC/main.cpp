@@ -212,6 +212,9 @@ int main(int argc, char* argv[])
 	bool winEnabled = false;
 	bool spritesEnabled = false;
 
+	unsigned short wx, wy;
+	unsigned short scx, scy;
+
 	//Window loop
 	unsigned int index;
 	while (window.isOpen())
@@ -224,14 +227,17 @@ int main(int argc, char* argv[])
 		}
 
 		arch_mutex.lock();
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Pause))
+			debugger = true;
+
 		buttonsPressed = check_buttons(arch, buttonsPressed);
 		arch_mutex.unlock();
 
 		window.clear();
 
-		if (arch->ram[LY].to_ulong() < 144)
+		if (arch->lcdcMode == 3)
 		{
-			winEnabled = arch->ram[LCDC][5];
+			winEnabled = arch->ram[LCDC][5] && arch->ram[WX].to_ulong() > 0x7 && arch->ram[WX].to_ulong() < 0xA7;
 			spritesEnabled = arch->ram[LCDC][1];
 
 			drawScreen(arch, BGtilesTex, BG);
@@ -241,6 +247,28 @@ int main(int argc, char* argv[])
 
 			if (spritesEnabled)
 				drawSprites(arch, spritesTex, sprites);
+
+			wx = arch->ram[WX].to_ulong() - 7;
+			wy = arch->ram[WY].to_ulong();
+			scx = arch->ram[SCX].to_ulong();
+			scy = arch->ram[SCY].to_ulong();
+
+			for (int y = 0; y < V_TILES; y++)
+			{
+				for (int x = 0; x < H_TILES; x++)
+				{
+					index = y * V_TILES + x;
+
+					BGtiles[index].setTexture(BGtilesTex[index]);
+					BGtiles[index].setPosition(x * 8 + scx, y * 8 + scy);
+
+					if (winEnabled)
+					{
+						WINtiles[index].setTexture(WINtilesTex[index]);
+						WINtiles[index].setPosition(x * 8 + wx, y * 8 + wy);
+					}
+				}
+			}
 		}
 
 		for (int y = 0; y < V_TILES; y++)
@@ -249,16 +277,10 @@ int main(int argc, char* argv[])
 			{
 				index = y * V_TILES + x;
 
-				BGtiles[index].setTexture(BGtilesTex[index]);
-				BGtiles[index].setPosition(x * 8, y * 8);
 				window.draw(BGtiles[index]);
 
 				if (winEnabled)
-				{
-					WINtiles[index].setTexture(WINtilesTex[index]);
-					WINtiles[index].setPosition(x * 8, y * 8);
 					window.draw(WINtiles[index]);
-				}
 			}
 		}
 

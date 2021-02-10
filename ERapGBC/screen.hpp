@@ -156,6 +156,7 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 	byte attributes;
 	bool xFlip;
 	bool yFlip;
+	bool priority;
 
 	unsigned short palNum;
 	RGB paletteColors[4];
@@ -182,6 +183,7 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 		attributes = arch->ram[address + 3];
 		xFlip = attributes[5];
 		yFlip = attributes[6];
+		priority = attributes[7];
 
 		palNum = attributes.to_ulong() & 7;
 
