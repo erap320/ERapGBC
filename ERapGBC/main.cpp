@@ -179,6 +179,19 @@ bool check_buttons(Architecture* arch, bool pressedBefore)
 	return pressedAfter;
 }
 
+void displayAll(sf::RenderWindow &window, sf::Sprite* sprites)
+{
+	unsigned int index;
+	for (int y = 0; y < V_TILES; y++)
+	{
+		for (int x = 0; x < H_TILES; x++)
+		{
+			index = y * V_TILES + x;
+			window.draw(sprites[index]);
+		}
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	sf::RenderWindow window(sf::VideoMode(LCD_W, LCD_H), "ERapGBC");
@@ -202,11 +215,15 @@ int main(int argc, char* argv[])
 	sf::Texture BGtilesTex[H_TILES * V_TILES];
 	sf::Sprite BGtiles[H_TILES * V_TILES];
 
+	sf::Texture OtilesTex[H_TILES * V_TILES];
+	sf::Sprite Otiles[H_TILES * V_TILES];
+
 	sf::Texture WINtilesTex[H_TILES * V_TILES];
 	sf::Sprite WINtiles[H_TILES * V_TILES];
 
 	sf::Texture spritesTex[SPRITES_NUM];
 	sf::Sprite sprites[SPRITES_NUM];
+	bool spritesPriority[SPRITES_NUM];
 
 	bool buttonsPressed = false;
 	bool winEnabled = false;
@@ -240,13 +257,13 @@ int main(int argc, char* argv[])
 			winEnabled = arch->ram[LCDC][5] && arch->ram[WX].to_ulong() > 0x7 && arch->ram[WX].to_ulong() < 0xA7;
 			spritesEnabled = arch->ram[LCDC][1];
 
-			drawScreen(arch, BGtilesTex, BG);
+			drawScreen(arch, BGtilesTex, BG, OtilesTex);
 
 			if (winEnabled)
 				drawScreen(arch, WINtilesTex, WIN);
 
 			if (spritesEnabled)
-				drawSprites(arch, spritesTex, sprites);
+				drawSprites(arch, spritesTex, sprites, spritesPriority);
 
 			wx = arch->ram[WX].to_ulong() - 7;
 			wy = arch->ram[WY].to_ulong();
@@ -262,6 +279,9 @@ int main(int argc, char* argv[])
 					BGtiles[index].setTexture(BGtilesTex[index]);
 					BGtiles[index].setPosition(x * 8 + scx, y * 8 + scy);
 
+					Otiles[index].setTexture(OtilesTex[index]);
+					Otiles[index].setPosition(x * 8 + scx, y * 8 + scy);
+
 					if (winEnabled)
 					{
 						WINtiles[index].setTexture(WINtilesTex[index]);
@@ -271,24 +291,25 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		for (int y = 0; y < V_TILES; y++)
-		{
-			for (int x = 0; x < H_TILES; x++)
-			{
-				index = y * V_TILES + x;
-
-				window.draw(BGtiles[index]);
-
-				if (winEnabled)
-					window.draw(WINtiles[index]);
-			}
-		}
+		displayAll(window, BGtiles);
 
 		if (spritesEnabled)
 		{
 			for (int i = 0; i < SPRITES_NUM; i++)
 			{
-				window.draw(sprites[i]);
+				if (spritesPriority[i])
+					window.draw(sprites[i]);
+			}
+		}
+
+		displayAll(window, Otiles);
+
+		if (spritesEnabled)
+		{
+			for (int i = 0; i < SPRITES_NUM; i++)
+			{
+				if (!spritesPriority[i])
+					window.draw(sprites[i]);
 			}
 		}
 

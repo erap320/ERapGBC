@@ -11,18 +11,18 @@
 
 #define SPRITES_NUM 40
 
-struct RGB
+struct RGBA
 {
 	sf::Uint8 red, green, blue, alpha;
 };
 
-RGB fromGBColor(byte high, byte low)
+RGBA fromGBColor(byte high, byte low)
 {
 	/*
 	*	High		Low
 	*	xBBBBBGG	GGGRRRRR
 	*/
-	RGB result;
+	RGBA result;
 	result.red = (low & (byte)0x1F).to_ulong() << 3;
 	result.green = ((low & (byte)0xE0) >> 5).to_ulong() + ((high & (byte)0x3) << 3).to_ulong() << 3;
 	result.blue = ((high & (byte)0x7c) >> 2).to_ulong() << 3;
@@ -31,7 +31,7 @@ RGB fromGBColor(byte high, byte low)
 	return result;
 }
 
-void paintPixel(sf::Uint8* pixel, RGB color)
+void paintPixel(sf::Uint8* pixel, RGBA color)
 {
 	pixel[0] = color.red; //R
 	pixel[1] = color.green; //G
@@ -43,7 +43,7 @@ enum TileType {
 	BG = 3, WIN = 6
 };
 
-void tile2pixels(Architecture* arch, byte* tileMem, sf::Uint8* pixels, RGB* paletteColors, bool hFlip, bool vFlip)
+void tile2pixels(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, bool hFlip, bool vFlip)
 {
 	unsigned short dots[64];
 	unsigned short bit;
@@ -74,7 +74,7 @@ void tile2pixels(Architecture* arch, byte* tileMem, sf::Uint8* pixels, RGB* pale
 	}
 }
 
-void drawTile(Architecture* arch, unsigned short x, unsigned short y, sf::Texture* tile, TileType type)
+void drawTile(Architecture* arch, unsigned short x, unsigned short y, sf::Texture* tile, TileType type, sf::Texture* overlay = NULL)
 {
 	if (x > 31 || y > 31)
 	{
@@ -107,7 +107,7 @@ void drawTile(Architecture* arch, unsigned short x, unsigned short y, sf::Textur
 		return;
 	}
 
-	RGB paletteColors[4];
+	RGBA paletteColors[4];
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -135,17 +135,30 @@ void drawTile(Architecture* arch, unsigned short x, unsigned short y, sf::Textur
 
 	sf::Uint8* pixels = new sf::Uint8[TILE_W * TILE_H * 4];
 
-	tile2pixels(arch, tileMem, pixels, paletteColors, hFlip, vFlip);
+	//Regular background
+	tile2pixels(tileMem, pixels, paletteColors, hFlip, vFlip);
 
 	sf::Image img;
 	img.create(8, 8, pixels);
 
 	tile->loadFromImage(img);
 
+	//Overlay background
+	if (overlay != NULL)
+	{
+		//Transparency
+		paletteColors[0].alpha = 0x00;
+
+		tile2pixels(tileMem, pixels, paletteColors, hFlip, vFlip);
+		img.create(8, 8, pixels);
+
+		overlay->loadFromImage(img);
+	}
+
 	delete[] pixels;
 }
 
-void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprites)
+void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprites, bool* priority)
 {
 	data base = 0xFE00;
 	data address;
@@ -156,10 +169,9 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 	byte attributes;
 	bool xFlip;
 	bool yFlip;
-	bool priority;
 
 	unsigned short palNum;
-	RGB paletteColors[4];
+	RGBA paletteColors[4];
 
 	unsigned int tilePixels = TILE_W * TILE_H * 4;
 	bool doubleSize = arch->ram[LCDC][2];
@@ -183,7 +195,7 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 		attributes = arch->ram[address + 3];
 		xFlip = attributes[5];
 		yFlip = attributes[6];
-		priority = attributes[7];
+		priority[i] = attributes[7];
 
 		palNum = attributes.to_ulong() & 7;
 
@@ -206,11 +218,11 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 		{
 			tileAddr = 16 * arch->ram[address + 2].to_ulong();
 			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(arch, tileMem, pixels, paletteColors, xFlip, yFlip);
+			tile2pixels(tileMem, pixels, paletteColors, xFlip, yFlip);
 
 			tileAddr += 16;
 			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(arch, tileMem, &pixels[tilePixels], paletteColors, xFlip, yFlip);
+			tile2pixels(tileMem, &pixels[tilePixels], paletteColors, xFlip, yFlip);
 
 			img.create(8, 16, pixels);
 		}
@@ -219,7 +231,7 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 			tileAddr = 16 * arch->ram[address + 2].to_ulong();
 
 			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(arch, tileMem, pixels, paletteColors, xFlip, yFlip);
+			tile2pixels(tileMem, pixels, paletteColors, xFlip, yFlip);
 			img.create(8, 8, pixels);
 		}
 
@@ -231,14 +243,17 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 	delete[] pixels;
 }
 
-void drawScreen(Architecture* arch, sf::Texture* tiles, TileType type)
+void drawScreen(Architecture* arch, sf::Texture* tiles, TileType type, sf::Texture* overlay = NULL)
 {
 	arch->updateVideoBank();
 	for (int y = 0; y < V_TILES; y++)
 	{
 		for (int x = 0; x < H_TILES; x++)
 		{
-			drawTile(arch, x, y, &tiles[y*V_TILES+x], type);
+			if(overlay == NULL)
+				drawTile(arch, x, y, &tiles[y*V_TILES+x], type);
+			else
+				drawTile(arch, x, y, &tiles[y*V_TILES+x], type, &overlay[y * V_TILES + x]);
 		}
 	}
 }
