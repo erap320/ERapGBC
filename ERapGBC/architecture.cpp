@@ -52,6 +52,9 @@ Architecture::Architecture()
 	ram[WY] = 0x00;
 	ram[WX] = 0x00;
 	ram[IE] = 0x00;
+
+	//Initialize last VBlank time
+	lastVBlank = std::chrono::steady_clock::now();
 }
 
 void Architecture::loadROM(string romFileName)

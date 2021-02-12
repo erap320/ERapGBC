@@ -1,4 +1,5 @@
 #include "architecture.hpp"
+#include <thread>
 
 #define HBLANK_CLKS 457
 #define MODE2_CLKS 80
@@ -7,6 +8,8 @@
 #define MODE0_CLKS 146
 #define VBLANK_LINES 144
 #define MAX_V_LINES 153
+
+#define FRAME_TIME std::chrono::milliseconds(15);
 
 void Architecture::lcdc()
 {
@@ -19,6 +22,15 @@ void Architecture::lcdc()
 
 			if (Yline == VBLANK_LINES) //Mode 1
 			{
+				/*
+				* Sleep here until 16.75ms are elapsed
+				* from the last vblank, to match the
+				* original timing of the GBC
+				*/
+				std::chrono::steady_clock::time_point target = lastVBlank + FRAME_TIME;
+				std::this_thread::sleep_until(target);
+				lastVBlank = target;
+
 				ram[STAT][1] = 0;
 				ram[STAT][0] = 1;
 				lcdcMode = 1;

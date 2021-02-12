@@ -15,7 +15,7 @@ using std::mutex;
 #define LCD_W 160
 #define LCD_H 144
 
-bool debugger = true;
+bool debugger = false;
 
 //To ensure synchronization between threads
 //that try to access the architecture simultaneously

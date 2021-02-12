@@ -6,6 +6,7 @@
 #include "registers.hpp"
 #include "utils.hpp"
 #include "cartridge.hpp"
+#include <chrono>
 using std::string;
 using std::to_string;
 
@@ -334,6 +335,7 @@ public:
 	//Manage display related aspects
 	void lcdc();
 	unsigned short lcdcMode = 0;
+	std::chrono::steady_clock::time_point lastVBlank;
 
 	//Execute one instruction pointed by PC
 	data step(bool& debug);
