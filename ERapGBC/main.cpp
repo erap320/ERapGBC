@@ -179,19 +179,6 @@ bool check_buttons(Architecture* arch, bool pressedBefore)
 	return pressedAfter;
 }
 
-void displayAll(sf::RenderWindow &window, sf::Sprite* sprites)
-{
-	unsigned int index;
-	for (int y = 0; y < V_TILES; y++)
-	{
-		for (int x = 0; x < H_TILES; x++)
-		{
-			index = y * V_TILES + x;
-			window.draw(sprites[index]);
-		}
-	}
-}
-
 int main(int argc, char* argv[])
 {
 	sf::RenderWindow window(sf::VideoMode(LCD_W, LCD_H), "ERapGBC");
@@ -212,28 +199,22 @@ int main(int argc, char* argv[])
 	thread processing(architecture_main, arch);
 	processing.detach();
 	
-	sf::Texture BGtilesTex[H_TILES * V_TILES];
-	sf::Sprite BGtiles[H_TILES * V_TILES];
+	sf::Texture BGtex[LINES_NUM];
+	sf::Sprite Background[LINES_NUM];
 
-	sf::Texture OtilesTex[H_TILES * V_TILES];
-	sf::Sprite Otiles[H_TILES * V_TILES];
+	sf::Texture Otex[LINES_NUM];
+	sf::Sprite Overlay[LINES_NUM];
 
-	sf::Texture WINtilesTex[H_TILES * V_TILES];
-	sf::Sprite WINtiles[H_TILES * V_TILES];
+	sf::Texture WINtex[LINES_NUM];
+	sf::Sprite Window[LINES_NUM];
 
 	sf::Texture spritesTex[SPRITES_NUM];
 	sf::Sprite sprites[SPRITES_NUM];
 	bool spritesPriority[SPRITES_NUM];
 
 	bool buttonsPressed = false;
-	bool winEnabled = false;
-	bool spritesEnabled = false;
-
-	unsigned short wx, wy;
-	unsigned short scx, scy;
 
 	//Window loop
-	unsigned int index;
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -254,46 +235,36 @@ int main(int argc, char* argv[])
 
 		if (arch->lcdcMode == 3)
 		{
-			winEnabled = arch->ram[LCDC][5] && arch->ram[WX].to_ulong() > 0x7 && arch->ram[WX].to_ulong() < 0xA7;
-			spritesEnabled = arch->ram[LCDC][1];
-
-			drawScreen(arch, BGtilesTex, BG, OtilesTex);
-
-			if (winEnabled)
-				drawScreen(arch, WINtilesTex, WIN);
-
-			if (spritesEnabled)
-				drawSprites(arch, spritesTex, sprites, spritesPriority);
-
-			wx = arch->ram[WX].to_ulong() - 7;
-			wy = arch->ram[WY].to_ulong();
-			scx = arch->ram[SCX].to_ulong();
-			scy = arch->ram[SCY].to_ulong();
-
-			for (int y = 0; y < V_TILES; y++)
+			for (unsigned short line = 0; line < LINES_NUM; line++)
 			{
-				for (int x = 0; x < H_TILES; x++)
+				drawLine(arch, line, BGtex, BG, Otex);
+
+				if (arch->winEnabled[line])
 				{
-					index = y * V_TILES + x;
+					drawLine(arch, line, WINtex, WIN);
+				}
 
-					BGtiles[index].setTexture(BGtilesTex[index]);
-					BGtiles[index].setPosition(x * 8 + scx, y * 8 + scy);
+				Background[line].setTexture(BGtex[line]);
+				Background[line].setPosition(arch->scx[line], line + arch->scy[line]);
 
-					Otiles[index].setTexture(OtilesTex[index]);
-					Otiles[index].setPosition(x * 8 + scx, y * 8 + scy);
+				Overlay[line].setTexture(Otex[line]);
+				Overlay[line].setPosition(arch->scx[line], line + arch->scy[line]);
 
-					if (winEnabled)
-					{
-						WINtiles[index].setTexture(WINtilesTex[index]);
-						WINtiles[index].setPosition(x * 8 + wx, y * 8 + wy);
-					}
+				if (arch->winEnabled[line])
+				{
+					Window[line].setTexture(WINtex[line]);
+					Window[line].setPosition(arch->wx[line], line + arch->wy[line]);
 				}
 			}
+
+			if (true)
+				drawSprites(arch, spritesTex, sprites, spritesPriority);
 		}
 
-		displayAll(window, BGtiles);
+		for (unsigned short line = 0; line < LINES_NUM; line++)
+			window.draw(Background[line]);
 
-		if (spritesEnabled)
+		if (true)
 		{
 			for (int i = 0; i < SPRITES_NUM; i++)
 			{
@@ -302,9 +273,10 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		displayAll(window, Otiles);
+		for (unsigned short line = 0; line < LINES_NUM; line++)
+			window.draw(Overlay[line]);
 
-		if (spritesEnabled)
+		if (true)
 		{
 			for (int i = 0; i < SPRITES_NUM; i++)
 			{

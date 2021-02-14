@@ -20,6 +20,14 @@ void Architecture::lcdc()
 		{
 			Yline++;
 
+			//Update X and Y values for background and window
+			scx[Yline] = ram[SCX].to_ulong();
+			scy[Yline] = ram[SCY].to_ulong();
+			wx[Yline] = ram[WX].to_ulong() - 7;
+			wy[Yline] = ram[WY].to_ulong();
+			winEnabled[Yline] = ram[LCDC][5] && ram[WX].to_ulong() > 0x7 && ram[WX].to_ulong() < 0xA7;
+			spritesEnabled[Yline] = ram[LCDC][1];
+
 			if (Yline == VBLANK_LINES) //Mode 1
 			{
 				/*

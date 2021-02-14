@@ -4,10 +4,13 @@
 
 #define TILE_W 8
 #define TILE_H 8
-#define PIXEL_BYTES 4
+#define LINE_W 160
+#define BYTES_PER_PIXEL 4
 
 #define H_TILES 20
 #define V_TILES 20
+
+#define LINES_NUM 160
 
 #define SPRITES_NUM 40
 
@@ -69,97 +72,153 @@ void tile2pixels(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, bool hFl
 		for (int x = 0; x < 8; x++)
 		{
 			index = y * TILE_W + x;
-			paintPixel(&pixels[index * PIXEL_BYTES], paletteColors[dots[index]]);
+			paintPixel(&pixels[index * BYTES_PER_PIXEL], paletteColors[dots[index]]);
 		}
 	}
 }
 
-void drawTile(Architecture* arch, unsigned short x, unsigned short y, sf::Texture* tile, TileType type, sf::Texture* overlay = NULL)
+void tile2line(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, unsigned short y, bool hFlip, bool vFlip)
 {
-	if (x > 31 || y > 31)
+	unsigned short dots[64];
+	unsigned short bit;
+	int by;
+	for (int i = 0; i < 64; i++)
 	{
-		error("Trying to draw a non exising tile: " + to_string(y) + "," + to_string(x));
+		if (vFlip)
+			by = (7 - (i / 8)) * 2;
+		else
+			by = (i / 8) * 2;
+
+		if (hFlip)
+			bit = i % 8;
+		else
+			bit = 7 - (i % 8);
+
+		dots[i] = tileMem[by][bit] + 2 * tileMem[by + 1][bit];
+	}
+
+	unsigned short index;
+	for (int x = 0; x < 8; x++)
+	{
+		index = y * TILE_W + x;
+		paintPixel(pixels + x*BYTES_PER_PIXEL, paletteColors[dots[index]]);
+	}
+}
+
+void drawLine(Architecture* arch, unsigned short line, sf::Texture* tiles, TileType type, sf::Texture* overlay = NULL)
+{
+	arch->updateVideoBank();
+
+	//unsigned short x, y;
+
+	/*if (type == BG)
+	{
+		x = arch->ram[SCX].to_ulong();
+		y = arch->ram[SCY].to_ulong();
+	}
+	else if (type == WIN)
+	{
+		x = arch->ram[WX].to_ulong();
+		y = arch->ram[WY].to_ulong();
+	}*/
+
+	if (line > LINES_NUM)
+	{
+		error("Trying to draw a non exising line: " + to_string(line));
 		return;
 	}
 
 	byte lcdcReg = arch->ram[LCDC];
 
-	//The base of video banks will be 0x8000 in memory, so we use
-	//an appropriate offset for internal indexing
-	data tileOffset = y * 32 + x;
-
-	if (lcdcReg[(unsigned short)type])
-		tileOffset += 0x1C00; // 0x9C00
-	else
-		tileOffset += 0x1800; // 0x9800
-	
-	data tileNumber = arch->videoBanks[0][tileOffset].to_ulong();
-
-	byte tileAttributes = arch->videoBanks[1][tileOffset];
-	unsigned short palNum = tileAttributes.to_ulong() & 7;
-	unsigned short bank = tileAttributes[3];
-	bool hFlip = tileAttributes[5];
-	bool vFlip = tileAttributes[6];
-
-	if (palNum > 7)
-	{
-		error("Non exising palette " + to_string(palNum) + " used in tile: " + to_string(y) + "," + to_string(x));
-		return;
-	}
-
+	data tileOffset;
+	byte tileAttributes;
+	unsigned short palNum, bank;
+	bool hFlip, vFlip;
 	RGBA paletteColors[4];
+	byte* tileMem;
 
-	for (int i = 0; i < 4; i++)
-	{
-		paletteColors[i] = fromGBColor(arch->colorPalettes[palNum][i][1], arch->colorPalettes[palNum][i][0]);
-	}
+	sf::Uint8* pixels = new sf::Uint8[LINE_W * 1 * BYTES_PER_PIXEL];
+	sf::Uint8* Opixels = new sf::Uint8[LINE_W * 1 * BYTES_PER_PIXEL];
+	sf::Image img;
 
-	//The base of video banks will be 0x8000 in memory, so to have
-	//the equivalent we use an appropriate offset
-	//Every tile of 8*8 2bpp uses 16 bytes 
-	data tileAddr;
-	if (lcdcReg[4]) // 8000 mode
-		tileAddr = 16 * tileNumber;
-	else // 8800 mode
+	for (unsigned int col = 0; col < H_TILES; col++)
 	{
-		if (tileNumber <= 127)
-			tileAddr = 0x1000 + (16 * tileNumber);
+		//The base of video banks will be 0x8000 in memory, so we use
+		//an appropriate offset for internal indexing
+		tileOffset = (line / 8) * 32 + col;
+
+		if (lcdcReg[(unsigned short)type])
+			tileOffset += 0x1C00; // 0x9C00
 		else
+			tileOffset += 0x1800; // 0x9800
+
+		data tileNumber = arch->videoBanks[0][tileOffset].to_ulong();
+
+		tileAttributes = arch->videoBanks[1][tileOffset];
+		palNum = tileAttributes.to_ulong() & 7;
+		bank = tileAttributes[3];
+		hFlip = tileAttributes[5];
+		vFlip = tileAttributes[6];
+
+		if (palNum > 7)
 		{
-			tileNumber -= 128;
-			tileAddr = 0x0800 + (16 * tileNumber);
+			error("Non exising palette " + to_string(palNum) + " used in line " + to_string(line) + ", tile " + to_string(col));
+			return;
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			paletteColors[i] = fromGBColor(arch->colorPalettes[palNum][i][1], arch->colorPalettes[palNum][i][0]);
+		}
+
+		//The base of video banks will be 0x8000 in memory, so to have
+		//the equivalent we use an appropriate offset
+		//Every tile of 8*8 2bpp uses 16 bytes 
+		data tileAddr;
+		if (lcdcReg[4]) // 8000 mode
+			tileAddr = 16 * tileNumber;
+		else // 8800 mode
+		{
+			if (tileNumber <= 127)
+				tileAddr = 0x1000 + (16 * tileNumber);
+			else
+			{
+				tileNumber -= 128;
+				tileAddr = 0x0800 + (16 * tileNumber);
+			}
+		}
+
+		tileMem = &arch->videoBanks[bank][tileAddr];
+
+		//Regular background
+		tile2line(tileMem, &pixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
+
+		if (overlay != NULL)
+		{
+			//Transparency
+			paletteColors[0].alpha = 0x00;
+			tile2line(tileMem, &Opixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
 		}
 	}
 
-	byte* tileMem = &arch->videoBanks[bank][tileAddr];
-
-	sf::Uint8* pixels = new sf::Uint8[TILE_W * TILE_H * 4];
-
-	//Regular background
-	tile2pixels(tileMem, pixels, paletteColors, hFlip, vFlip);
-
-	sf::Image img;
-	img.create(8, 8, pixels);
-
-	tile->loadFromImage(img);
+	img.create(LINE_W, 1, pixels);
+	tiles[line].loadFromImage(img);
 
 	//Overlay background
 	if (overlay != NULL)
 	{
-		//Transparency
-		paletteColors[0].alpha = 0x00;
-
-		tile2pixels(tileMem, pixels, paletteColors, hFlip, vFlip);
-		img.create(8, 8, pixels);
-
-		overlay->loadFromImage(img);
+		img.create(LINE_W, 1, Opixels);
+		overlay[line].loadFromImage(img);
 	}
 
 	delete[] pixels;
+	delete[] Opixels;
 }
 
 void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprites, bool* priority)
 {
+	arch->updateVideoBank();
+
 	data base = 0xFE00;
 	data address;
 
@@ -243,17 +302,17 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 	delete[] pixels;
 }
 
-void drawScreen(Architecture* arch, sf::Texture* tiles, TileType type, sf::Texture* overlay = NULL)
-{
-	arch->updateVideoBank();
-	for (int y = 0; y < V_TILES; y++)
-	{
-		for (int x = 0; x < H_TILES; x++)
-		{
-			if(overlay == NULL)
-				drawTile(arch, x, y, &tiles[y*V_TILES+x], type);
-			else
-				drawTile(arch, x, y, &tiles[y*V_TILES+x], type, &overlay[y * V_TILES + x]);
-		}
-	}
-}
+//void drawScreen(Architecture* arch, sf::Texture* tiles, TileType type, sf::Texture* overlay = NULL)
+//{
+//	arch->updateVideoBank();
+//	for (int y = 0; y < V_TILES; y++)
+//	{
+//		for (int x = 0; x < H_TILES; x++)
+//		{
+//			if(overlay == NULL)
+//				drawLine(arch, x, y, &tiles[y*V_TILES+x], type);
+//			else
+//				drawTile(arch, x, y, &tiles[y*V_TILES+x], type, &overlay[y * V_TILES + x]);
+//		}
+//	}
+//}

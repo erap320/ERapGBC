@@ -334,6 +334,12 @@ public:
 
 	//Manage display related aspects
 	void lcdc();
+	unsigned short scx[160];
+	unsigned short scy[160];
+	unsigned short wx[160];
+	unsigned short wy[160];
+	bool winEnabled[160];
+	bool spritesEnabled[160];
 	unsigned short lcdcMode = 0;
 	std::chrono::steady_clock::time_point lastVBlank;
 
