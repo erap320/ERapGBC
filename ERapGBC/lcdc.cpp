@@ -1,4 +1,5 @@
 #include "architecture.hpp"
+#include "screen.hpp"
 #include <thread>
 
 #define HBLANK_CLKS 457
@@ -27,8 +28,11 @@ void Architecture::lcdc()
 				* from the last vblank, to match the
 				* original timing of the GBC
 				*/
-				std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
-				lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
+				if (!turbo)
+				{
+					std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
+					lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
+				}
 
 				ram[STAT][1] = 0;
 				ram[STAT][0] = 1;
@@ -77,14 +81,21 @@ void Architecture::lcdc()
 					ram[STAT][0] = 1;
 					lcdcMode = 3;
 
-					//Update X and Y values for background and window
 					lineSet[Yline].scx = ram[SCX].to_ulong();
 					lineSet[Yline].scy = ram[SCY].to_ulong();
 					lineSet[Yline].wx = ram[WX].to_ulong() - 7;
 					lineSet[Yline].wy = ram[WY].to_ulong();
 					lineSet[Yline].winEnabled = ram[LCDC][5] && ram[WX].to_ulong() < 0xA7;
 					lineSet[Yline].spritesEnabled = ram[LCDC][1];
-					lineSet[Yline].lcdc = ram[LCDC];
+
+					//Draw line on textures
+					drawLine(this, BG);
+
+					if (lineSet[Yline].winEnabled);
+						drawLine(this, WIN);
+
+					if (lineSet[Yline].spritesEnabled)
+						drawSprites(this);
 				}
 			}
 			else if (time < HBLANK_CLKS) //Mode 0

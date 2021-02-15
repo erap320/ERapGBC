@@ -1,6 +1,5 @@
 #include "resources.hpp"
 #include "architecture.hpp"
-#include "screen.hpp"
 #include <iostream>
 #include <thread>
 #include <mutex>
@@ -199,26 +198,43 @@ int main(int argc, char* argv[])
 	thread processing(architecture_main, arch);
 	processing.detach();
 	
-	sf::Texture BGtex[LINES_NUM];
+	
 	sf::Sprite Background[LINES_NUM];
 
-	sf::Texture Otex[LINES_NUM];
 	sf::Sprite Overlay[LINES_NUM];
 
-	sf::Texture WINtex[LINES_NUM];
+	
 	sf::Sprite Window[LINES_NUM];
 
-	sf::Texture SPtex[LINES_NUM];
+	
 	sf::Sprite Sprites[LINES_NUM];
 
-	sf::Texture PSPtex[LINES_NUM];
+	
 	sf::Sprite PSprites[LINES_NUM];
 
-	// Initialize sprite lines' positions, always the same
-	// unlike the ones of background and window that change
-	// at each line due to scx/y and wx/y
+
+	// Initialize textures as transparent black
+	// and assign each texture to its sprite, so that
+	// it is updated automatically
+	sf::Image img;
+	img.create(160, 1, sf::Color(0, 0, 0, 0));
 	for (unsigned short line = 0; line < LINES_NUM; line++)
 	{
+		arch->BGtex[line].loadFromImage(img);
+		arch->Otex[line].loadFromImage(img);
+		arch->WINtex[line].loadFromImage(img);
+		arch->SPtex[line].loadFromImage(img);
+		arch->PSPtex[line].loadFromImage(img);
+
+		Background[line].setTexture(arch->BGtex[line]);
+		Overlay[line].setTexture(arch->Otex[line]);
+		Window[line].setTexture(arch->WINtex[line]);
+		Sprites[line].setTexture(arch->SPtex[line]);
+		PSprites[line].setTexture(arch->PSPtex[line]);
+
+		// Initialize sprite lines' positions, always the same
+		// unlike the ones of background and window that change
+		// at each line due to scx/y and wx/y
 		Sprites[line].setPosition(0, line);
 		PSprites[line].setPosition(0, line);
 	}
@@ -235,12 +251,15 @@ int main(int argc, char* argv[])
 				window.close();
 		}
 
-		arch_mutex.lock();
+		//Keyboard interactions
+		//Stop execution to debug
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Pause))
 			debugger = true;
 
+		//Turbo mode!
+		arch->turbo = sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+
 		buttonsPressed = check_buttons(arch, buttonsPressed);
-		arch_mutex.unlock();
 
 		window.clear();
 
@@ -248,30 +267,12 @@ int main(int argc, char* argv[])
 		{
 			for (unsigned short line = 0; line < LINES_NUM; line++)
 			{
-				drawLine(arch, line, &BGtex[line], BG, &Otex[line]);
-
-				if (arch->lineSet[line].winEnabled)
-				{
-					drawLine(arch, line, &WINtex[line], WIN);
-				}
-
-				Background[line].setTexture(BGtex[line]);
 				Background[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
-
-				Overlay[line].setTexture(Otex[line]);
 				Overlay[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 
 				if (arch->lineSet[line].winEnabled)
 				{
-					Window[line].setTexture(WINtex[line]);
 					Window[line].setPosition(arch->lineSet[line].wx, line + arch->lineSet[line].wy);
-				}
-
-				if (arch->lineSet[line].spritesEnabled)
-				{
-					drawSprites(arch, line, &SPtex[line], &PSPtex[line]);
-					Sprites[line].setTexture(SPtex[line]);
-					PSprites[line].setTexture(PSPtex[line]);
 				}
 			}
 		}
@@ -280,7 +281,8 @@ int main(int argc, char* argv[])
 			window.draw(Background[line]);
 
 		for (unsigned short line = 0; line < LINES_NUM; line++)
-			window.draw(PSprites[line]);
+			if (arch->lineSet[line].spritesEnabled)
+				window.draw(PSprites[line]);
 
 		for (unsigned short line = 0; line < LINES_NUM; line++)
 			window.draw(Overlay[line]);
@@ -290,7 +292,8 @@ int main(int argc, char* argv[])
 				window.draw(Window[line]);
 
 		for (unsigned short line = 0; line < LINES_NUM; line++)
-			window.draw(Sprites[line]);
+			if(arch->lineSet[line].spritesEnabled)
+				window.draw(Sprites[line]);
 
 		window.display();
 	}

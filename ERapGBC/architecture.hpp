@@ -7,12 +7,15 @@
 #include "utils.hpp"
 #include "cartridge.hpp"
 #include <chrono>
+#include <SFML/Graphics/Texture.hpp>
 using std::string;
 using std::to_string;
 
 #define RAM_SIZE 65536
 #define W_BANK_SIZE 0x1000
 #define V_BANK_SIZE 0x2000
+
+#define LINES_NUM 160
 
 //Forward definition
 class Architecture;
@@ -231,7 +234,6 @@ Instruction disasm(data address);
 struct LineSettings {
 	unsigned short scx, scy, wx, wy;
 	bool winEnabled, spritesEnabled;
-	byte lcdc;
 };
 
 //Architecture singleton
@@ -341,9 +343,16 @@ public:
 
 	//Manage display related aspects
 	void lcdc();
-	LineSettings lineSet[160];
 	unsigned short lcdcMode = 0;
 	std::chrono::steady_clock::time_point lastVBlank;
+	bool turbo = false;
+	LineSettings lineSet[LINES_NUM];
+	//Textures that compose the screen
+	sf::Texture BGtex[LINES_NUM];
+	sf::Texture Otex[LINES_NUM];
+	sf::Texture WINtex[LINES_NUM];
+	sf::Texture SPtex[LINES_NUM];
+	sf::Texture PSPtex[LINES_NUM];
 
 	//Execute one instruction pointed by PC
 	data step(bool& debug);
