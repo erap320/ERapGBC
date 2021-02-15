@@ -208,9 +208,20 @@ int main(int argc, char* argv[])
 	sf::Texture WINtex[LINES_NUM];
 	sf::Sprite Window[LINES_NUM];
 
-	sf::Texture spritesTex[SPRITES_NUM];
-	sf::Sprite sprites[SPRITES_NUM];
-	bool spritesPriority[SPRITES_NUM];
+	sf::Texture SPtex[LINES_NUM];
+	sf::Sprite Sprites[LINES_NUM];
+
+	sf::Texture PSPtex[LINES_NUM];
+	sf::Sprite PSprites[LINES_NUM];
+
+	// Initialize sprite lines' positions, always the same
+	// unlike the ones of background and window that change
+	// at each line due to scx/y and wx/y
+	for (unsigned short line = 0; line < LINES_NUM; line++)
+	{
+		Sprites[line].setPosition(0, line);
+		PSprites[line].setPosition(0, line);
+	}
 
 	bool buttonsPressed = false;
 
@@ -237,53 +248,49 @@ int main(int argc, char* argv[])
 		{
 			for (unsigned short line = 0; line < LINES_NUM; line++)
 			{
-				drawLine(arch, line, BGtex, BG, Otex);
+				drawLine(arch, line, &BGtex[line], BG, &Otex[line]);
 
-				if (arch->winEnabled[line])
+				if (arch->lineSet[line].winEnabled)
 				{
-					drawLine(arch, line, WINtex, WIN);
+					drawLine(arch, line, &WINtex[line], WIN);
 				}
 
 				Background[line].setTexture(BGtex[line]);
-				Background[line].setPosition(arch->scx[line], line + arch->scy[line]);
+				Background[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 
 				Overlay[line].setTexture(Otex[line]);
-				Overlay[line].setPosition(arch->scx[line], line + arch->scy[line]);
+				Overlay[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 
-				if (arch->winEnabled[line])
+				if (arch->lineSet[line].winEnabled)
 				{
 					Window[line].setTexture(WINtex[line]);
-					Window[line].setPosition(arch->wx[line], line + arch->wy[line]);
+					Window[line].setPosition(arch->lineSet[line].wx, line + arch->lineSet[line].wy);
+				}
+
+				if (arch->lineSet[line].spritesEnabled)
+				{
+					drawSprites(arch, line, &SPtex[line], &PSPtex[line]);
+					Sprites[line].setTexture(SPtex[line]);
+					PSprites[line].setTexture(PSPtex[line]);
 				}
 			}
-
-			if (true)
-				drawSprites(arch, spritesTex, sprites, spritesPriority);
 		}
 
 		for (unsigned short line = 0; line < LINES_NUM; line++)
 			window.draw(Background[line]);
 
-		if (true)
-		{
-			for (int i = 0; i < SPRITES_NUM; i++)
-			{
-				if (spritesPriority[i])
-					window.draw(sprites[i]);
-			}
-		}
+		for (unsigned short line = 0; line < LINES_NUM; line++)
+			window.draw(PSprites[line]);
 
 		for (unsigned short line = 0; line < LINES_NUM; line++)
 			window.draw(Overlay[line]);
 
-		if (true)
-		{
-			for (int i = 0; i < SPRITES_NUM; i++)
-			{
-				if (!spritesPriority[i])
-					window.draw(sprites[i]);
-			}
-		}
+		for (unsigned short line = 0; line < LINES_NUM; line++)
+			if (arch->lineSet[line].winEnabled)
+				window.draw(Window[line]);
+
+		for (unsigned short line = 0; line < LINES_NUM; line++)
+			window.draw(Sprites[line]);
 
 		window.display();
 	}

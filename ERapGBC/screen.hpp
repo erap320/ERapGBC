@@ -7,6 +7,8 @@
 #define LINE_W 160
 #define BYTES_PER_PIXEL 4
 
+#define LINE_BYTES 640
+
 #define H_TILES 20
 #define V_TILES 20
 
@@ -46,6 +48,7 @@ enum TileType {
 	BG = 3, WIN = 6
 };
 
+//Deprecated, but could be useful to see how complete tiles were drawn
 void tile2pixels(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, bool hFlip, bool vFlip)
 {
 	unsigned short dots[64];
@@ -77,7 +80,7 @@ void tile2pixels(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, bool hFl
 	}
 }
 
-void tile2line(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, unsigned short y, bool hFlip, bool vFlip)
+void tile2line(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, unsigned short y, bool hFlip, bool vFlip, bool spriteMode = false)
 {
 	unsigned short dots[64];
 	unsigned short bit;
@@ -98,10 +101,26 @@ void tile2line(byte* tileMem, sf::Uint8* pixels, RGBA* paletteColors, unsigned s
 	}
 
 	unsigned short index;
-	for (int x = 0; x < 8; x++)
+
+	//Sprites can overlap in the same line
+	//this means we shouldn't change pixels
+	//when there is a transparent color
+	if (spriteMode)
 	{
-		index = y * TILE_W + x;
-		paintPixel(pixels + x*BYTES_PER_PIXEL, paletteColors[dots[index]]);
+		for (int x = 0; x < 8; x++)
+		{
+			index = y * TILE_W + x;
+			if(dots[index] != 0)
+				paintPixel(pixels + x * BYTES_PER_PIXEL, paletteColors[dots[index]]);
+		}
+	}
+	else
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			index = y * TILE_W + x;
+			paintPixel(pixels + x * BYTES_PER_PIXEL, paletteColors[dots[index]]);
+		}
 	}
 }
 
@@ -109,26 +128,13 @@ void drawLine(Architecture* arch, unsigned short line, sf::Texture* tiles, TileT
 {
 	arch->updateVideoBank();
 
-	//unsigned short x, y;
-
-	/*if (type == BG)
-	{
-		x = arch->ram[SCX].to_ulong();
-		y = arch->ram[SCY].to_ulong();
-	}
-	else if (type == WIN)
-	{
-		x = arch->ram[WX].to_ulong();
-		y = arch->ram[WY].to_ulong();
-	}*/
-
 	if (line > LINES_NUM)
 	{
 		error("Trying to draw a non exising line: " + to_string(line));
 		return;
 	}
 
-	byte lcdcReg = arch->ram[LCDC];
+	byte lcdcReg = arch->lineSet[line].lcdc;
 
 	data tileOffset;
 	byte tileAttributes;
@@ -137,8 +143,8 @@ void drawLine(Architecture* arch, unsigned short line, sf::Texture* tiles, TileT
 	RGBA paletteColors[4];
 	byte* tileMem;
 
-	sf::Uint8* pixels = new sf::Uint8[LINE_W * 1 * BYTES_PER_PIXEL];
-	sf::Uint8* Opixels = new sf::Uint8[LINE_W * 1 * BYTES_PER_PIXEL];
+	sf::Uint8* pixels = new sf::Uint8[LINE_BYTES];
+	sf::Uint8* Opixels = new sf::Uint8[LINE_BYTES];
 	sf::Image img;
 
 	for (unsigned int col = 0; col < H_TILES; col++)
@@ -193,6 +199,7 @@ void drawLine(Architecture* arch, unsigned short line, sf::Texture* tiles, TileT
 		//Regular background
 		tile2line(tileMem, &pixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
 
+		//Overlay background
 		if (overlay != NULL)
 		{
 			//Transparency
@@ -202,20 +209,20 @@ void drawLine(Architecture* arch, unsigned short line, sf::Texture* tiles, TileT
 	}
 
 	img.create(LINE_W, 1, pixels);
-	tiles[line].loadFromImage(img);
+	tiles->loadFromImage(img);
 
 	//Overlay background
 	if (overlay != NULL)
 	{
 		img.create(LINE_W, 1, Opixels);
-		overlay[line].loadFromImage(img);
+		overlay->loadFromImage(img);
 	}
 
 	delete[] pixels;
 	delete[] Opixels;
 }
 
-void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprites, bool* priority)
+void drawSprites(Architecture* arch, unsigned short line, sf::Texture *spritesTex, sf::Texture* PspritesTex)
 {
 	arch->updateVideoBank();
 
@@ -223,96 +230,106 @@ void drawSprites(Architecture* arch, sf::Texture *spritesTex, sf::Sprite* sprite
 	data address;
 
 	int Y;
+	int endY;
 	int X;
 	data tileAddr;
 	byte attributes;
+	unsigned short bank;
 	bool xFlip;
 	bool yFlip;
+	bool priority;
 
 	unsigned short palNum;
 	RGBA paletteColors[4];
 
-	unsigned int tilePixels = TILE_W * TILE_H * 4;
-	bool doubleSize = arch->ram[LCDC][2];
-	//bool doubleSize = false;
+	bool doubleSize = arch->lineSet[line].lcdc[2];
+	unsigned short subLine;
 
 	byte* tileMem;
-	sf::Uint8* pixels;
+	sf::Uint8* pixels = new sf::Uint8[LINE_BYTES];
+	sf::Uint8* Ppixels = new sf::Uint8[LINE_BYTES];
 
-	if (doubleSize)
-		pixels = new sf::Uint8[tilePixels * 2];
-	else
-		pixels = new sf::Uint8[tilePixels];
+	//Fill with 0 to make unpainted pixels transparent
+	for (unsigned int i = 0; i < LINE_BYTES; i++)
+	{
+		pixels[i] = 0;
+		Ppixels[i] = 0;
+	}
 
 	sf::Image img;
-	for (unsigned int i = 0; i < SPRITES_NUM; i++)
+
+	//Only 10 sprites per line are drawn, the rest is ignored
+	unsigned short count = 0;
+
+	for (unsigned int i = 0; i < SPRITES_NUM && count < 10; i++)
 	{
 		address = base + (4 * i);
 		
 		Y = arch->ram[address].to_ulong() - 16;
-		X = arch->ram[address+1].to_ulong() - 8;
-		attributes = arch->ram[address + 3];
-		xFlip = attributes[5];
-		yFlip = attributes[6];
-		priority[i] = attributes[7];
+		endY = Y + (doubleSize ? 15 : 7);
 
-		palNum = attributes.to_ulong() & 7;
-
-		if (palNum > 7)
+		//Check if the sprite is in this line
+		if (line >= Y && line <= endY)
 		{
-			error("Non exising palette " + to_string(palNum) + " used in sprite: " + to_string(i));
-			return;
+			count++;
+
+			X = arch->ram[address + 1].to_ulong() - 8;
+			attributes = arch->ram[address + 3];
+			bank = attributes[3];
+			xFlip = attributes[5];
+			yFlip = attributes[6];
+			priority = attributes[7];
+
+			palNum = attributes.to_ulong() & 7;
+
+			if (palNum > 7)
+			{
+				error("Non exising palette " + to_string(palNum) + " used in sprite: " + to_string(i));
+				return;
+			}
+
+			for (int i = 0; i < 4; i++)
+			{
+				paletteColors[i] = fromGBColor(arch->objPalettes[palNum][i][1], arch->objPalettes[palNum][i][0]);
+			}
+			//Transparency
+			paletteColors[0].alpha = 0x00;
+
+			//The base of video banks will be 0x8000 in memory, so to have
+			//the equivalent we use an appropriate offset
+			if (doubleSize && line > Y + 7)
+			{
+				tileAddr = 16 * arch->ram[address + 2].to_ulong() + 16;
+				tileMem = &arch->videoBanks[bank][tileAddr];
+
+				subLine = line - (Y + 8);
+
+				if (priority)
+					tile2line(tileMem, &Ppixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+				else
+					tile2line(tileMem, &pixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+			}
+			else
+			{
+				tileAddr = 16 * arch->ram[address + 2].to_ulong();
+				tileMem = &arch->videoBanks[bank][tileAddr];
+
+				subLine = line - Y;
+
+				if(priority)
+					tile2line(tileMem, &Ppixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+				else
+					tile2line(tileMem, &pixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+			}
 		}
-
-		for (int i = 0; i < 4; i++)
-		{
-			paletteColors[i] = fromGBColor(arch->objPalettes[palNum][i][1], arch->objPalettes[palNum][i][0]);
-		}
-		//Transparency
-		paletteColors[0].alpha = 0x00;
-
-		//The base of video banks will be 0x8000 in memory, so to have
-		//the equivalent we use an appropriate offset
-		if (doubleSize)
-		{
-			tileAddr = 16 * arch->ram[address + 2].to_ulong();
-			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(tileMem, pixels, paletteColors, xFlip, yFlip);
-
-			tileAddr += 16;
-			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(tileMem, &pixels[tilePixels], paletteColors, xFlip, yFlip);
-
-			img.create(8, 16, pixels);
-		}
-		else
-		{
-			tileAddr = 16 * arch->ram[address + 2].to_ulong();
-
-			tileMem = &arch->videoBanks[attributes[3]][tileAddr];
-			tile2pixels(tileMem, pixels, paletteColors, xFlip, yFlip);
-			img.create(8, 8, pixels);
-		}
-
-		spritesTex[i].loadFromImage(img);
-		sprites[i].setTexture(spritesTex[i]);
-		sprites[i].setPosition(X, Y);
 	}
 
-	delete[] pixels;
-}
+	img.create(LINE_W, 1, pixels);
+	spritesTex->loadFromImage(img);
 
-//void drawScreen(Architecture* arch, sf::Texture* tiles, TileType type, sf::Texture* overlay = NULL)
-//{
-//	arch->updateVideoBank();
-//	for (int y = 0; y < V_TILES; y++)
-//	{
-//		for (int x = 0; x < H_TILES; x++)
-//		{
-//			if(overlay == NULL)
-//				drawLine(arch, x, y, &tiles[y*V_TILES+x], type);
-//			else
-//				drawTile(arch, x, y, &tiles[y*V_TILES+x], type, &overlay[y * V_TILES + x]);
-//		}
-//	}
-//}
+	img.create(LINE_W, 1, Ppixels);
+	PspritesTex->loadFromImage(img);
+
+	delete[] pixels;
+	delete[] Ppixels;
+}

@@ -192,6 +192,9 @@ enum Command {
 	ERR
 };
 
+#pragma optimize( "", off )
+//The first element of this array is always ruined by compiler optimization
+//I have no idea why
 const string cmd_codes[] =
 {	"LD", "LDD", "LDI", "LDH", "LDHL", "PUSH", "POP", "ADD", "ADC",
 	"SUB", "SBC", "AND", "OR", "XOR", "CP", "CPL", "INC", "DEC", "SWAP",
@@ -201,6 +204,7 @@ const string cmd_codes[] =
 	"CALL", "CALL(NZ)", "CALL(Z)", "CALL(NC)", "CALL(C)", "RET", "RET(NZ)", "RET(Z)", "RET(NC)",
 	"RET(C)", "RETI", "RST", "ERR"
 };
+#pragma optimize( "", on )
 
 class Instruction {
 public:
@@ -226,6 +230,13 @@ public:
 };
 
 Instruction disasm(data address);
+
+//To record screen related settings for each line
+struct LineSettings {
+	unsigned short scx, scy, wx, wy;
+	bool winEnabled, spritesEnabled;
+	byte lcdc;
+};
 
 //Architecture singleton
 class Architecture
@@ -334,12 +345,7 @@ public:
 
 	//Manage display related aspects
 	void lcdc();
-	unsigned short scx[160];
-	unsigned short scy[160];
-	unsigned short wx[160];
-	unsigned short wy[160];
-	bool winEnabled[160];
-	bool spritesEnabled[160];
+	LineSettings lineSet[160];
 	unsigned short lcdcMode = 0;
 	std::chrono::steady_clock::time_point lastVBlank;
 

@@ -9,7 +9,7 @@
 #define VBLANK_LINES 144
 #define MAX_V_LINES 153
 
-#define FRAME_TIME std::chrono::milliseconds(15);
+#define FRAME_TIME std::chrono::milliseconds(10)
 
 void Architecture::lcdc()
 {
@@ -20,14 +20,6 @@ void Architecture::lcdc()
 		{
 			Yline++;
 
-			//Update X and Y values for background and window
-			scx[Yline] = ram[SCX].to_ulong();
-			scy[Yline] = ram[SCY].to_ulong();
-			wx[Yline] = ram[WX].to_ulong() - 7;
-			wy[Yline] = ram[WY].to_ulong();
-			winEnabled[Yline] = ram[LCDC][5] && ram[WX].to_ulong() > 0x7 && ram[WX].to_ulong() < 0xA7;
-			spritesEnabled[Yline] = ram[LCDC][1];
-
 			if (Yline == VBLANK_LINES) //Mode 1
 			{
 				/*
@@ -35,9 +27,8 @@ void Architecture::lcdc()
 				* from the last vblank, to match the
 				* original timing of the GBC
 				*/
-				std::chrono::steady_clock::time_point target = lastVBlank + FRAME_TIME;
-				std::this_thread::sleep_until(target);
-				lastVBlank = target;
+				std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
+				lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
 
 				ram[STAT][1] = 0;
 				ram[STAT][0] = 1;
@@ -85,6 +76,15 @@ void Architecture::lcdc()
 					ram[STAT][1] = 1;
 					ram[STAT][0] = 1;
 					lcdcMode = 3;
+
+					//Update X and Y values for background and window
+					lineSet[Yline].scx = ram[SCX].to_ulong();
+					lineSet[Yline].scy = ram[SCY].to_ulong();
+					lineSet[Yline].wx = ram[WX].to_ulong() - 7;
+					lineSet[Yline].wy = ram[WY].to_ulong();
+					lineSet[Yline].winEnabled = ram[LCDC][5] && ram[WX].to_ulong() < 0xA7;
+					lineSet[Yline].spritesEnabled = ram[LCDC][1];
+					lineSet[Yline].lcdc = ram[LCDC];
 				}
 			}
 			else if (time < HBLANK_CLKS) //Mode 0
