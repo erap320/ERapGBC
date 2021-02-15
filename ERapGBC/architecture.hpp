@@ -192,9 +192,6 @@ enum Command {
 	ERR
 };
 
-#pragma optimize( "", off )
-//The first element of this array is always ruined by compiler optimization
-//I have no idea why
 const string cmd_codes[] =
 {	"LD", "LDD", "LDI", "LDH", "LDHL", "PUSH", "POP", "ADD", "ADC",
 	"SUB", "SBC", "AND", "OR", "XOR", "CP", "CPL", "INC", "DEC", "SWAP",
@@ -204,7 +201,6 @@ const string cmd_codes[] =
 	"CALL", "CALL(NZ)", "CALL(Z)", "CALL(NC)", "CALL(C)", "RET", "RET(NZ)", "RET(Z)", "RET(NC)",
 	"RET(C)", "RETI", "RST", "ERR"
 };
-#pragma optimize( "", on )
 
 class Instruction {
 public:

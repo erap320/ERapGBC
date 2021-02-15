@@ -107,6 +107,7 @@ void address_checks(data address, byte val)
 		{
 			arch->videoBanksDirty = true;
 		}
+
 		break;
 	}
 	}
