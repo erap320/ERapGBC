@@ -14,6 +14,8 @@
 
 #define SPRITES_NUM 40
 
+#define TRANSPARENT RGBA{0,0,0,0}
+
 struct RGBA
 {
 	sf::Uint8 red, green, blue, alpha;
@@ -128,6 +130,16 @@ void drawLine(Architecture* arch, TileType type)
 
 	unsigned short line = arch->ram[LY].to_ulong();
 
+	sf::Uint8 pixels[LINE_BYTES];
+	
+	if (type == WIN && !arch->lineSet[line].winEnabled) {
+		for (unsigned short x = 0; x < LINE_W; x++) {
+			paintPixel(&pixels[x * BYTES_PER_PIXEL], TRANSPARENT);
+		}
+		arch->WINtex.update(pixels, LINE_W, 1, arch->lineSet[line].wx, line + arch->lineSet[line].wy);
+		return;
+	}
+
 	byte lcdcReg = arch->ram[LCDC];
 
 	data tileOffset;
@@ -137,9 +149,7 @@ void drawLine(Architecture* arch, TileType type)
 	RGBA paletteColors[4];
 	byte* tileMem;
 
-	sf::Uint8 pixels[LINE_BYTES];
 	sf::Uint8 Opixels[LINE_BYTES];
-	sf::Image img;
 
 	for (unsigned int col = 0; col < H_TILES; col++)
 	{
@@ -202,19 +212,16 @@ void drawLine(Architecture* arch, TileType type)
 		}
 	}
 
-	img.create(LINE_W, 1, pixels);
-	
 	if (type == BG)
 	{
-		arch->BGtex[line].update(img);
+		arch->BGtex.update(pixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 
 		//Overlay background
-		img.create(LINE_W, 1, Opixels);
-		arch->Otex[line].update(img);
+		arch->Otex.update(Opixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 	}
 	else if (type == WIN)
 	{
-		arch->WINtex[line].update(img);
+		arch->WINtex.update(pixels, LINE_W, 1, arch->lineSet[line].wx, line + arch->lineSet[line].wy);
 	}
 }
 
@@ -223,6 +230,16 @@ void drawSprites(Architecture* arch)
 	arch->updateVideoBank();
 
 	unsigned short line = arch->ram[LY].to_ulong();
+
+	sf::Uint8 pixels[LINE_BYTES];
+	if (!arch->lineSet[line].spritesEnabled) {
+		for (unsigned short x = 0; x < LINE_W; x++) {
+			paintPixel(&pixels[x * BYTES_PER_PIXEL], TRANSPARENT);
+		}
+		arch->SPtex.update(pixels, LINE_W, 1, 0, line);
+		arch->PSPtex.update(pixels, LINE_W, 1, 0, line);
+		return;
+	}
 
 	data base = 0xFE00;
 	data address;
@@ -244,7 +261,6 @@ void drawSprites(Architecture* arch)
 	unsigned short subLine;
 
 	byte* tileMem;
-	sf::Uint8 pixels[LINE_BYTES];
 	sf::Uint8 Ppixels[LINE_BYTES];
 
 	//Fill with 0 to make unpainted pixels transparent
@@ -253,8 +269,6 @@ void drawSprites(Architecture* arch)
 		pixels[i] = 0;
 		Ppixels[i] = 0;
 	}
-
-	sf::Image img;
 
 	//Only 10 sprites per line are drawn, the rest is ignored
 	unsigned short count = 0;
@@ -322,9 +336,7 @@ void drawSprites(Architecture* arch)
 		}
 	}
 
-	img.create(LINE_W, 1, pixels);
-	arch->SPtex[line].update(img);
+	arch->SPtex.update(pixels, LINE_W, 1, 0, line);
 
-	img.create(LINE_W, 1, Ppixels);
-	arch->PSPtex[line].update(img);
+	arch->PSPtex.update(Ppixels, LINE_W, 1, 0, line);
 }

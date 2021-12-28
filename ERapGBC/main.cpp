@@ -199,45 +199,38 @@ int main(int argc, char* argv[])
 	processing.detach();
 	
 	
-	sf::Sprite Background[LINES_NUM];
-
-	sf::Sprite Overlay[LINES_NUM];
-
-	
-	sf::Sprite Window[LINES_NUM];
-
-	
-	sf::Sprite Sprites[LINES_NUM];
-
-	
-	sf::Sprite PSprites[LINES_NUM];
+	sf::Sprite Background;
+	sf::Sprite Overlay;
+	sf::Sprite Window;
+	sf::Sprite Sprites;	
+	sf::Sprite PSprites;
 
 
 	// Initialize textures as transparent black
 	// and assign each texture to its sprite, so that
 	// it is updated automatically
 	sf::Image img;
-	img.create(160, 1, sf::Color(0, 0, 0, 0));
-	for (unsigned short line = 0; line < LINES_NUM; line++)
-	{
-		arch->BGtex[line].loadFromImage(img);
-		arch->Otex[line].loadFromImage(img);
-		arch->WINtex[line].loadFromImage(img);
-		arch->SPtex[line].loadFromImage(img);
-		arch->PSPtex[line].loadFromImage(img);
+	img.create(160, 160, sf::Color(0, 0, 0, 0));
+	arch->BGtex.loadFromImage(img);
+	arch->Otex.loadFromImage(img);
+	arch->WINtex.loadFromImage(img);
+	arch->SPtex.loadFromImage(img);
+	arch->PSPtex.loadFromImage(img);
 
-		Background[line].setTexture(arch->BGtex[line]);
-		Overlay[line].setTexture(arch->Otex[line]);
-		Window[line].setTexture(arch->WINtex[line]);
-		Sprites[line].setTexture(arch->SPtex[line]);
-		PSprites[line].setTexture(arch->PSPtex[line]);
+	Background.setTexture(arch->BGtex);
+	Overlay.setTexture(arch->Otex);
+	Window.setTexture(arch->WINtex);
+	Sprites.setTexture(arch->SPtex);
+	PSprites.setTexture(arch->PSPtex);
 
-		// Initialize sprite lines' positions, always the same
-		// unlike the ones of background and window that change
-		// at each line due to scx/y and wx/y
-		Sprites[line].setPosition(0, line);
-		PSprites[line].setPosition(0, line);
-	}
+	// Initialize sprite lines' positions, always the same
+	// unlike the ones of background and window that change
+	// at each line due to scx/y and wx/y
+	Background.setPosition(0, 0);
+	Overlay.setPosition(0, 0);
+	Window.setPosition(0, 0);
+	Sprites.setPosition(0, 0);
+	PSprites.setPosition(0, 0);
 
 	bool buttonsPressed = false;
 
@@ -263,37 +256,15 @@ int main(int argc, char* argv[])
 
 		window.clear();
 
-		if (arch->lcdcMode == 3)
-		{
-			for (unsigned short line = 0; line < LINES_NUM; line++)
-			{
-				Background[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
-				Overlay[line].setPosition(arch->lineSet[line].scx, line + arch->lineSet[line].scy);
+		window.draw(Background);
 
-				if (arch->lineSet[line].winEnabled)
-				{
-					Window[line].setPosition(arch->lineSet[line].wx, line + arch->lineSet[line].wy);
-				}
-			}
-		}
+		window.draw(PSprites);
 
-		for (unsigned short line = 0; line < LINES_NUM; line++)
-			window.draw(Background[line]);
+		window.draw(Overlay);
 
-		for (unsigned short line = 0; line < LINES_NUM; line++)
-			if (arch->lineSet[line].spritesEnabled)
-				window.draw(PSprites[line]);
+		window.draw(Window);
 
-		for (unsigned short line = 0; line < LINES_NUM; line++)
-			window.draw(Overlay[line]);
-
-		for (unsigned short line = 0; line < LINES_NUM; line++)
-			if (arch->lineSet[line].winEnabled)
-				window.draw(Window[line]);
-
-		for (unsigned short line = 0; line < LINES_NUM; line++)
-			if(arch->lineSet[line].spritesEnabled)
-				window.draw(Sprites[line]);
+		window.draw(Sprites);
 
 		window.display();
 	}

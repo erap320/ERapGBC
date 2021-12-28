@@ -30,8 +30,8 @@ void Architecture::lcdc()
 				*/
 				if (!turbo)
 				{
-					std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
-					lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
+					//std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
+					//lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
 				}
 
 				ram[STAT][1] = 0;
@@ -91,11 +91,9 @@ void Architecture::lcdc()
 					//Draw line on textures
 					drawLine(this, BG);
 
-					if (lineSet[Yline].winEnabled);
-						drawLine(this, WIN);
+					drawLine(this, WIN);
 
-					if (lineSet[Yline].spritesEnabled)
-						drawSprites(this);
+					drawSprites(this);
 				}
 			}
 			else if (time < HBLANK_CLKS) //Mode 0

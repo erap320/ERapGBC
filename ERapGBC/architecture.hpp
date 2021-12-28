@@ -348,11 +348,11 @@ public:
 	bool turbo = false;
 	LineSettings lineSet[LINES_NUM];
 	//Textures that compose the screen
-	sf::Texture BGtex[LINES_NUM];
-	sf::Texture Otex[LINES_NUM];
-	sf::Texture WINtex[LINES_NUM];
-	sf::Texture SPtex[LINES_NUM];
-	sf::Texture PSPtex[LINES_NUM];
+	sf::Texture BGtex;
+	sf::Texture Otex;
+	sf::Texture WINtex;
+	sf::Texture SPtex;
+	sf::Texture PSPtex;
 
 	//Execute one instruction pointed by PC
 	data step(bool& debug);
