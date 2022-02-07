@@ -10,7 +10,7 @@
 #define VBLANK_LINES 144
 #define MAX_V_LINES 153
 
-#define FRAME_TIME std::chrono::milliseconds(10)
+#define FRAME_TIME std::chrono::milliseconds(16)
 
 void Architecture::lcdc()
 {
@@ -30,8 +30,8 @@ void Architecture::lcdc()
 				*/
 				if (!turbo)
 				{
-					//std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
-					//lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
+					std::this_thread::sleep_until(lastVBlank + FRAME_TIME);
+					lastVBlank = std::chrono::steady_clock::now() + FRAME_TIME;
 				}
 
 				ram[STAT][1] = 0;

@@ -7,7 +7,7 @@
 #include "utils.hpp"
 #include "cartridge.hpp"
 #include <chrono>
-#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics.hpp>
 using std::string;
 using std::to_string;
 
@@ -16,6 +16,9 @@ using std::to_string;
 #define V_BANK_SIZE 0x2000
 
 #define LINES_NUM 160
+
+#define LINE_BYTES 640 //LINE_W * BYTES_PER_PIXEL
+#define SCREEN_BYTES 102400 //LINE_BYTES * LINES_NUM
 
 //Forward definition
 class Architecture;
@@ -230,6 +233,8 @@ public:
 
 Instruction disasm(data address);
 
+typedef sf::Uint8 PixelLayer[SCREEN_BYTES];
+
 //To record screen related settings for each line
 struct LineSettings {
 	unsigned short scx, scy, wx, wy;
@@ -347,12 +352,13 @@ public:
 	std::chrono::steady_clock::time_point lastVBlank;
 	bool turbo = false;
 	LineSettings lineSet[LINES_NUM];
-	//Textures that compose the screen
-	sf::Texture BGtex;
-	sf::Texture Otex;
-	sf::Texture WINtex;
-	sf::Texture SPtex;
-	sf::Texture PSPtex;
+
+	//Layers that compose the screen
+	PixelLayer BGlayer;
+	PixelLayer Olayer;
+	PixelLayer WINlayer;
+	PixelLayer SPlayer;
+	PixelLayer PSPlayer;
 
 	//Execute one instruction pointed by PC
 	data step(bool& debug);

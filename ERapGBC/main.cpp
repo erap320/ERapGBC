@@ -14,6 +14,13 @@ using std::mutex;
 #define LCD_W 160
 #define LCD_H 144
 
+#define TEX_W LCD_W
+#define TEX_H LCD_W
+
+#define TRANSPARENT_BLACK sf::Color(0, 0, 0, 0)
+
+#define LAYERS_NUM 5
+
 bool debugger = false;
 
 //To ensure synchronization between threads
@@ -198,39 +205,43 @@ int main(int argc, char* argv[])
 	thread processing(architecture_main, arch);
 	processing.detach();
 	
-	
 	sf::Sprite Background;
 	sf::Sprite Overlay;
 	sf::Sprite Window;
-	sf::Sprite Sprites;	
+	sf::Sprite Sprites;
 	sf::Sprite PSprites;
+
+	sf::Texture BGtex;
+	sf::Texture Otex;
+	sf::Texture WINtex;
+	sf::Texture SPtex;
+	sf::Texture PSPtex;
+
+	//Layers are organized in these arrays in the same order in which
+	//they have to be drawn during each cycle
+	sf::Sprite* layerSprites[LAYERS_NUM] = { &Background, &PSprites, &Overlay, &Window, &Sprites };
+	sf::Texture* layerTextures[LAYERS_NUM] = { &BGtex, &PSPtex, &Otex, &WINtex, &SPtex };
+	PixelLayer* layerPixels[LAYERS_NUM] = { &arch->BGlayer, &arch->PSPlayer, &arch->Olayer, &arch->WINlayer, &arch->SPlayer };
 
 
 	// Initialize textures as transparent black
 	// and assign each texture to its sprite, so that
 	// it is updated automatically
 	sf::Image img;
-	img.create(160, 160, sf::Color(0, 0, 0, 0));
-	arch->BGtex.loadFromImage(img);
-	arch->Otex.loadFromImage(img);
-	arch->WINtex.loadFromImage(img);
-	arch->SPtex.loadFromImage(img);
-	arch->PSPtex.loadFromImage(img);
+	img.create(TEX_W, TEX_H, TRANSPARENT_BLACK);
 
-	Background.setTexture(arch->BGtex);
-	Overlay.setTexture(arch->Otex);
-	Window.setTexture(arch->WINtex);
-	Sprites.setTexture(arch->SPtex);
-	PSprites.setTexture(arch->PSPtex);
+	for (sf::Texture* tex : layerTextures)
+		tex->loadFromImage(img);
+
+	for (int i = 0; i < LAYERS_NUM; i++)
+		layerSprites[i]->setTexture(*layerTextures[i]);
 
 	// Initialize sprite lines' positions, always the same
 	// unlike the ones of background and window that change
 	// at each line due to scx/y and wx/y
-	Background.setPosition(0, 0);
-	Overlay.setPosition(0, 0);
-	Window.setPosition(0, 0);
-	Sprites.setPosition(0, 0);
-	PSprites.setPosition(0, 0);
+	for (sf::Sprite* sp : layerSprites) {
+		sp->setPosition(0, 0);
+	}
 
 	bool buttonsPressed = false;
 
@@ -256,15 +267,11 @@ int main(int argc, char* argv[])
 
 		window.clear();
 
-		window.draw(Background);
+		for (int i = 0; i < LAYERS_NUM; i++)
+			layerTextures[i]->update(*layerPixels[i]);
 
-		window.draw(PSprites);
-
-		window.draw(Overlay);
-
-		window.draw(Window);
-
-		window.draw(Sprites);
+		for (sf::Sprite* sp : layerSprites)
+			window.draw(*sp);
 
 		window.display();
 	}

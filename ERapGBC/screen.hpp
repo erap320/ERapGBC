@@ -4,10 +4,9 @@
 
 #define TILE_W 8
 #define TILE_H 8
+
 #define LINE_W 160
 #define BYTES_PER_PIXEL 4
-
-#define LINE_BYTES 640
 
 #define H_TILES 20
 #define V_TILES 20
@@ -129,14 +128,11 @@ void drawLine(Architecture* arch, TileType type)
 	arch->updateVideoBank();
 
 	unsigned short line = arch->ram[LY].to_ulong();
-
-	sf::Uint8 pixels[LINE_BYTES];
 	
 	if (type == WIN && !arch->lineSet[line].winEnabled) {
 		for (unsigned short x = 0; x < LINE_W; x++) {
-			paintPixel(&pixels[x * BYTES_PER_PIXEL], TRANSPARENT);
+			paintPixel(&arch->WINlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
 		}
-		arch->WINtex.update(pixels, LINE_W, 1, arch->lineSet[line].wx, line + arch->lineSet[line].wy);
 		return;
 	}
 
@@ -148,8 +144,6 @@ void drawLine(Architecture* arch, TileType type)
 	bool hFlip, vFlip;
 	RGBA paletteColors[4];
 	byte* tileMem;
-
-	sf::Uint8 Opixels[LINE_BYTES];
 
 	for (unsigned int col = 0; col < H_TILES; col++)
 	{
@@ -201,28 +195,39 @@ void drawLine(Architecture* arch, TileType type)
 		tileMem = &arch->videoBanks[bank][tileAddr];
 
 		//Regular background
-		tile2line(tileMem, &pixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
-
-		//Overlay background
 		if (type == BG)
 		{
+			tile2line(tileMem, &arch->BGlayer[(line * LINE_BYTES) + col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
+
+			//Overlay background
 			//Transparency
 			paletteColors[0].alpha = 0x00;
-			tile2line(tileMem, &Opixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
+			tile2line(tileMem, &arch->Olayer[(line * LINE_BYTES) + col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
 		}
+		else if (type == WIN) {
+			tile2line(tileMem, &arch->WINlayer[(line * LINE_BYTES) + col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
+		}
+
+		
+		//if (type == BG)
+		//{
+		//	//Transparency
+		//	paletteColors[0].alpha = 0x00;
+		//	tile2line(tileMem, &Opixels[col * TILE_W * BYTES_PER_PIXEL], paletteColors, line % 8, hFlip, vFlip);
+		//}
 	}
 
-	if (type == BG)
-	{
-		arch->BGtex.update(pixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
+	//if (type == BG)
+	//{
+	//	arch->BGlayer.update(pixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
 
-		//Overlay background
-		arch->Otex.update(Opixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
-	}
-	else if (type == WIN)
-	{
-		arch->WINtex.update(pixels, LINE_W, 1, arch->lineSet[line].wx, line + arch->lineSet[line].wy);
-	}
+	//	//Overlay background
+	//	arch->Olayer.update(Opixels, LINE_W, 1, arch->lineSet[line].scx, line + arch->lineSet[line].scy);
+	//}
+	//else if (type == WIN)
+	//{
+	//	arch->WINlayer.update(pixels, LINE_W, 1, arch->lineSet[line].wx, line + arch->lineSet[line].wy);
+	//}
 }
 
 void drawSprites(Architecture* arch)
@@ -231,13 +236,13 @@ void drawSprites(Architecture* arch)
 
 	unsigned short line = arch->ram[LY].to_ulong();
 
-	sf::Uint8 pixels[LINE_BYTES];
 	if (!arch->lineSet[line].spritesEnabled) {
 		for (unsigned short x = 0; x < LINE_W; x++) {
-			paintPixel(&pixels[x * BYTES_PER_PIXEL], TRANSPARENT);
+			paintPixel(&arch->SPlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
+			paintPixel(&arch->PSPlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
 		}
-		arch->SPtex.update(pixels, LINE_W, 1, 0, line);
-		arch->PSPtex.update(pixels, LINE_W, 1, 0, line);
+		/*arch->SPlayer.update(pixels, LINE_W, 1, 0, line);
+		arch->PSPlayer.update(pixels, LINE_W, 1, 0, line);*/
 		return;
 	}
 
@@ -261,13 +266,12 @@ void drawSprites(Architecture* arch)
 	unsigned short subLine;
 
 	byte* tileMem;
-	sf::Uint8 Ppixels[LINE_BYTES];
 
 	//Fill with 0 to make unpainted pixels transparent
-	for (unsigned int i = 0; i < LINE_BYTES; i++)
+	for (unsigned int i = (line * LINE_BYTES); i < (line * LINE_BYTES) + LINE_BYTES; i++)
 	{
-		pixels[i] = 0;
-		Ppixels[i] = 0;
+		arch->SPlayer[i] = 0;
+		arch->PSPlayer[i] = 0;
 	}
 
 	//Only 10 sprites per line are drawn, the rest is ignored
@@ -317,9 +321,9 @@ void drawSprites(Architecture* arch)
 				subLine = line - (Y + 8);
 
 				if (priority)
-					tile2line(tileMem, &Ppixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+					tile2line(tileMem, &arch->PSPlayer[(line * LINE_BYTES) + X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
 				else
-					tile2line(tileMem, &pixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+					tile2line(tileMem, &arch->SPlayer[(line * LINE_BYTES) + X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
 			}
 			else
 			{
@@ -329,14 +333,14 @@ void drawSprites(Architecture* arch)
 				subLine = line - Y;
 
 				if(priority)
-					tile2line(tileMem, &Ppixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+					tile2line(tileMem, &arch->PSPlayer[(line * LINE_BYTES) + X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
 				else
-					tile2line(tileMem, &pixels[X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
+					tile2line(tileMem, &arch->SPlayer[(line * LINE_BYTES) + X * BYTES_PER_PIXEL], paletteColors, subLine, xFlip, yFlip, true);
 			}
 		}
 	}
 
-	arch->SPtex.update(pixels, LINE_W, 1, 0, line);
+	/*arch->SPlayer.update(pixels, LINE_W, 1, 0, line);
 
-	arch->PSPtex.update(Ppixels, LINE_W, 1, 0, line);
+	arch->PSPlayer.update(Ppixels, LINE_W, 1, 0, line);*/
 }
