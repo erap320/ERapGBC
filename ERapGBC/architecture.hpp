@@ -17,8 +17,8 @@ using std::to_string;
 
 #define LINES_NUM 160
 
-#define LINE_BYTES 640 //LINE_W * BYTES_PER_PIXEL
-#define SCREEN_BYTES 102400 //LINE_BYTES * LINES_NUM
+#define LINE_BYTES 0x400 //LINE_W * BYTES_PER_PIXEL
+#define SCREEN_BYTES 0x40000 //LINE_BYTES * LINES_NUM
 
 //Forward definition
 class Architecture;

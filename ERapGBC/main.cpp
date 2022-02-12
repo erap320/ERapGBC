@@ -11,11 +11,13 @@ using std::endl;
 using std::thread;
 using std::mutex;
 
+//Physical pixels
 #define LCD_W 160
 #define LCD_H 144
 
-#define TEX_W LCD_W
-#define TEX_H LCD_W
+//Tilmaps size
+#define TEX_W 256
+#define TEX_H 256
 
 #define TRANSPARENT_BLACK sf::Color(0, 0, 0, 0)
 
