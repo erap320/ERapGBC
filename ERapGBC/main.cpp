@@ -62,6 +62,21 @@ void architecture_main(Architecture* arch)
 
 			switch (buffer[0])
 			{
+			case 'h': {
+				//Print help message for the debugger
+				cout << " b (address): break execution on the address\n"
+					<< " c: continue with normal execution\n"
+					<< " n (steps): make a number of steps\n"
+					<< " o: continue execution until a return instruction is encountered\n"
+					<< " m: print memory\n"
+					<< " d (address): disassemble instructions at address\n"
+					<< " r: dump ram to a file\n"
+					<< " v: dump video ram to a file\n"
+					<< " p: print palettes\n"
+					<< " h: print this help message\n";
+				wait = true;
+				break;
+			}
 			case 'b': {
 				//Breakpoint
 				buffer.erase(0, 2);

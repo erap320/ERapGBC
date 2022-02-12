@@ -349,7 +349,7 @@ public:
 	//Manage display related aspects
 	void lcdc();
 	unsigned short lcdcMode = 0;
-	std::chrono::steady_clock::time_point lastVBlank;
+	std::chrono::high_resolution_clock::time_point lastVBlank;
 	bool turbo = false;
 	LineSettings lineSet[LINES_NUM];
 
