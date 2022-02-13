@@ -425,8 +425,38 @@ void Argument::w16(word val)
 			break;
 		}
 		case IMM: {
-			error("Can't write word to memory");
-			throw WrongExecutionException();
+			data source = val.to_ulong();
+			byte low = source & 0xff;
+			byte high = (source & 0xffff) >> 8;
+
+			data address = 0xff00 + (value.immediate & 0xff);
+
+			//Write the low byte
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (low & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
+				Architecture::instance()->ram[address] = low;
+			}
+
+			address_checks(address, low);
+
+			//Write the high byte
+			address += 1;
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (high & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
+				Architecture::instance()->ram[address] = high;
+			}
+
+			address_checks(address, high);
 
 			break;
 		}
@@ -434,8 +464,38 @@ void Argument::w16(word val)
 		case W_REG:
 		case C_REG:
 		case W_IMM: {
-			error("Can't write word to memory");
-			throw WrongExecutionException();
+			data source = val.to_ulong();
+			byte low = source & 0xff;
+			byte high = (source & 0xffff) >> 8;
+
+			data address = value.immediate & 0xffff;
+
+			//Write the low byte
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (low & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
+				Architecture::instance()->ram[address] = low;
+			}
+
+			address_checks(address, low);
+
+			//Write the high byte
+			address += 1;
+			if (address == P1)
+			{
+				Architecture* arch = Architecture::instance();
+				arch->ram[P1] = (arch->ram[P1] & (byte)0xCF) | (low & (byte)0x30);
+			}
+			else if (address > 0x7FFF)
+			{
+				Architecture::instance()->ram[address] = low;
+			}
+
+			address_checks(address, low);
 
 			break;
 		}

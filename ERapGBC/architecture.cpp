@@ -54,7 +54,7 @@ Architecture::Architecture()
 	ram[IE] = 0x00;
 
 	//Initialize last VBlank time
-	lastVBlank = std::chrono::steady_clock::now();
+	lastVBlank = std::chrono::high_resolution_clock::now();
 }
 
 void Architecture::loadROM(string romFileName)
@@ -85,7 +85,7 @@ void Architecture::loadROM(string romFileName)
 void Architecture::swapWorkingBank(unsigned short selected)
 {
 	if (selected > 7)
-		error("Wrong Working RAM bank chosen, no swapping was performed: "+selected);
+		error("Wrong Working RAM bank chosen, no swapping was performed: "+ to_hex(selected));
 
 	data base = 0xD000;
 	
@@ -110,7 +110,7 @@ void Architecture::swapWorkingBank(unsigned short selected)
 void Architecture::swapVideoBank(unsigned short selected)
 {
 	if (selected > 1)
-		error("Wrong Video RAM bank chosen, no swapping was performed: "+selected);
+		error("Wrong Video RAM bank chosen, no swapping was performed: " + to_hex(selected));
 
 	data base = 0x8000;
 
@@ -146,7 +146,7 @@ void Architecture::updateVideoBank()
 void Architecture::swapCartROMBank(unsigned int selected)
 {
 	if(selected > CART_ROM_BANKS-1)
-		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + selected);
+		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + to_hex(selected));
 
 	//Can't swap with bank0, bank1 will be selected
 	/*if (selected == 0)
@@ -167,7 +167,7 @@ void Architecture::swapCartROMBank(unsigned int selected)
 void Architecture::swapCartRAMBank(unsigned short selected)
 {
 	if (selected > CART_RAM_BANKS - 1)
-		error("Wrong Cartridge RAM bank chosen, no swapping was performed: " + selected);
+		error("Wrong Cartridge RAM bank chosen, no swapping was performed: " + to_hex(selected));
 
 	data internalAddr;
 	for (data addr = 0; addr < RAM_BANK_SIZE; addr++)

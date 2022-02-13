@@ -68,7 +68,7 @@ void architecture_main(Architecture* arch)
 					<< " c: continue with normal execution\n"
 					<< " n (steps): make a number of steps\n"
 					<< " o: continue execution until a return instruction is encountered\n"
-					<< " m: print memory\n"
+					<< " m (address): print memory at address\n"
 					<< " d (address): disassemble instructions at address\n"
 					<< " r: dump ram to a file\n"
 					<< " v: dump video ram to a file\n"
