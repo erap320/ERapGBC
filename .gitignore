@@ -1,3 +1,6 @@
+#Manuals
+*.pdf
+
 #Save files
 *.sav
 

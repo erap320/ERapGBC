@@ -252,6 +252,7 @@ void Architecture::swapCartRAMBank(byte value)
 	currentRAMBank = selected;
 	debug("Swapped cart RAM bank "+to_hex(selected), PC);
 
+	//TODO Is it ok to update the save file only at this times?
 	save_cart_ram();
 }
 
