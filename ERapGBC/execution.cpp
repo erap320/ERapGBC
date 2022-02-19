@@ -96,11 +96,11 @@ void address_checks(data address, byte val)
 		if (address >= CART_ROM_BANK && address <= CART_ROM_BANK + 0x0FFF)
 		{
 			switch (arch->cart.controller) {
-				case NO_CONTROLLER:
-					break;
-				default:
-					arch->swapCartROMBank(val, arch->highROMBankNum);
-					break;
+			case NO_CONTROLLER:
+				break;
+			default:
+				arch->swapCartROMBank(val, arch->highROMBankNum);
+				break;
 			}
 		}
 		else if (address >= CART_ROM_9TH_BIT_BANK && address <= CART_ROM_9TH_BIT_BANK + 0x0FFF)

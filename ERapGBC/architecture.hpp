@@ -365,6 +365,9 @@ public:
 	//Execute one instruction pointed by PC
 	data step(bool& debugger);
 
+	//Write the content of the cartridge ram in a .sav file
+	void save_cart_ram();
+
 	//Write the content of the ram in a .bin file
 	void dump_ram();
 

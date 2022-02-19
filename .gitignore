@@ -1,3 +1,7 @@
+#Save files
+*.sav
+
+#Test roms
 roms/
 
 ## Ignore Visual Studio temporary files, build results, and

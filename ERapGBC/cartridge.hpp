@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include "types.hpp"
 #include "exceptions.hpp"
 using std::string;
@@ -61,6 +62,8 @@ const string memory_controller_names[] = { "UNKNOWN", "MBC1", "MBC2", "MBC3", "E
 //Data contained in a game cartridge
 class Cartridge {
 public:
+	string filename = "";
+
 	byte romBanks[MAX_CART_ROM_BANKS][ROM_BANK_SIZE];
 	byte ramBanks[MAX_CART_RAM_BANKS][RAM_BANK_SIZE];
 
@@ -84,12 +87,20 @@ public:
 	bool loadROM(string romFileName)
 	{
 		//Load rom
-		ifstream rom(romFileName, std::ios::in | std::ios::binary);
-		if (!rom)
+		if (!std::filesystem::exists(romFileName)) {
+			error("ROM " + romFileName + " not found");
 			return false;
+		}
+
+		ifstream rom(romFileName, std::ios::in | std::ios::binary);
+		if (!rom) {
+			error("Error while opening ROM file " + romFileName);
+			return false;
+		}
+
+		filename = std::filesystem::path(romFileName).stem().string();
 
 		char buffer;
-
 		for (data addr = 0; addr < ROM_BANK_SIZE && !rom.eof(); addr++)
 		{
 			rom.read(&buffer, 1);
@@ -117,11 +128,35 @@ public:
 		}
 		rom.close();
 
-		for (unsigned int bank = 0; bank < ramBanksNum; bank++)
+		//Check if there is a save file for the rom
+		string saveFileName = filename + ".sav";
+		if (std::filesystem::exists(saveFileName))
 		{
-			for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+			ifstream save(saveFileName, std::ios::in | std::ios::binary);
+			if (!rom) {
+				error("Error while save file " + saveFileName);
+				return false;
+			}
+
+			for (unsigned int bank = 0; bank < ramBanksNum; bank++)
 			{
-				ramBanks[bank][addr] = 0xFF;
+				for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+				{
+					save.read(&buffer, 1);
+					ramBanks[bank][addr] = buffer;
+				}
+			}
+
+			save.close();
+		}
+		else 
+		{
+			for (unsigned int bank = 0; bank < ramBanksNum; bank++)
+			{
+				for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+				{
+					ramBanks[bank][addr] = 0xFF;
+				}
 			}
 		}
 

@@ -251,6 +251,8 @@ void Architecture::swapCartRAMBank(byte value)
 
 	currentRAMBank = selected;
 	debug("Swapped cart RAM bank "+to_hex(selected), PC);
+
+	save_cart_ram();
 }
 
 void Architecture::runDMA(byte a)
@@ -272,6 +274,27 @@ void Architecture::runVDMA(data src, data dst)
 	ram[HDMA5] = 0xFF;
 
 	debug("VDMA from " + to_hex(src) + " to " + to_hex(dst), PC);
+}
+
+void Architecture::save_cart_ram() {
+	ofstream save(cart.filename + ".sav", std::ios::binary);
+
+	if (!save)
+	{
+		error("Could not create save file");
+		return;
+	}
+
+	uint8_t buffer;
+	for (int bank = 0; bank < cart.ramBanksNum; bank++) {
+		for (int i = 0; i < RAM_BANK_SIZE; i++)
+		{
+			buffer = cart.ramBanks[bank][i].to_ulong() & 0xff;
+			save.write((char*)(&buffer), sizeof(uint8_t));
+		}
+	}
+
+	save.close();
 }
 
 void Architecture::dump_ram()
