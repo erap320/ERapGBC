@@ -44,6 +44,18 @@ void debug(string str, bitset<16> PC)
 	out_mutex.unlock();
 }
 
+void info(string str, bitset<16> PC)
+{
+	out_mutex.lock();
+
+	if (PC == 0)
+		cout << "I> " << str << endl;
+	else
+		cout << "I|" << to_hex(PC.to_ulong()) << "> " << str << endl;
+
+	out_mutex.unlock();
+}
+
 string to_hex(unsigned long i, bool byte)
 {
 	std::stringstream stream;

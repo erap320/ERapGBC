@@ -84,8 +84,11 @@ void Architecture::loadROM(string romFileName)
 
 void Architecture::swapWorkingBank(unsigned short selected)
 {
-	if (selected > 7)
-		error("Wrong Working RAM bank chosen, no swapping was performed: "+ to_hex(selected));
+	if (selected > 7) {
+		error("Wrong Working RAM bank chosen, no swapping was performed: " + to_hex(selected));
+		throw ArchitectureException();
+	}
+
 
 	data base = 0xD000;
 	
@@ -109,8 +112,10 @@ void Architecture::swapWorkingBank(unsigned short selected)
 
 void Architecture::swapVideoBank(unsigned short selected)
 {
-	if (selected > 1)
+	if (selected > 1) {
 		error("Wrong Video RAM bank chosen, no swapping was performed: " + to_hex(selected));
+		throw ArchitectureException();
+	}
 
 	data base = 0x8000;
 
@@ -143,14 +148,49 @@ void Architecture::updateVideoBank()
 }
 
 //Function to perform bank switching
-void Architecture::swapCartROMBank(unsigned int selected)
+void Architecture::swapCartROMBank(byte low, byte high /*Selected by writing to 0x3000-0x3FFF*/)
 {
-	if(selected > CART_ROM_BANKS-1)
-		error("Wrong Cartridge ROM bank chosen, no swapping was performed: " + to_hex(selected));
+	lowROMBankNum = low;
+	highROMBankNum = high;
+	
+	unsigned int selected;
+
+	switch (cart.controller)
+	{
+	case MBC3: {
+		selected = low.to_ulong() & 0x7f;
+		break;
+	}
+	case MBC5: {
+		selected = low.to_ulong() & 0xff;
+		if (high[0])
+			selected += 0x100;
+		break;
+	}
+	default: {
+		selected = low.to_ulong() & 0xff;
+		break;
+	}
+	}
+
+	if (selected > cart.romBanksNum - 1)
+	{
+		error("Wrong Cartridge ROM bank chosen (max is " + to_hex(cart.romBanksNum) + "), no swapping was performed: " + to_hex(selected));
+		throw ArchitectureException();
+		return;
+	}
 
 	//Can't swap with bank0, bank1 will be selected
-	/*if (selected == 0)
-		selected = 1;*/
+	switch (cart.controller)
+	{
+		case MBC5:
+			break;
+		default: {
+			if (selected == 0)
+				selected = 1;
+			break;
+		}
+	}
 
 	for (data addr = 0; addr < ROM_BANK_SIZE; addr++)
 	{
@@ -164,10 +204,40 @@ void Architecture::swapCartROMBank(unsigned int selected)
 }
 
 //Function to perform bank switching
-void Architecture::swapCartRAMBank(unsigned short selected)
+void Architecture::swapCartRAMBank(byte value)
 {
-	if (selected > CART_RAM_BANKS - 1)
-		error("Wrong Cartridge RAM bank chosen, no swapping was performed: " + to_hex(selected));
+	unsigned int selected;
+
+	switch (cart.controller)
+	{
+	case MBC3: {
+		selected = value.to_ulong() & 0xff;
+		if (selected <= 0x03) {
+			break;
+		}
+		else if (selected >= 0x08 && selected <= 0x0C) {
+			warning("RTC register not implemented yet", PC);
+			throw UninmplementedException();
+			return;
+		} else {
+			error("Unknown cart RAM bank value for MBC3", PC);
+			throw ArchitectureException();
+			return;
+		}
+		break;
+	}
+	default: {
+		selected = value.to_ulong() & 0xff;
+		break;
+	}
+	}
+
+	if (selected > cart.ramBanksNum - 1)
+	{
+		error("Wrong Cartridge RAM bank chosen (max is " + to_hex(cart.ramBanksNum) + "), no swapping was performed: " + to_hex(selected));
+		throw ArchitectureException();
+		return;
+	}
 
 	data internalAddr;
 	for (data addr = 0; addr < RAM_BANK_SIZE; addr++)

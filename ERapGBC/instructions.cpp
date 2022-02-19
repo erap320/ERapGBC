@@ -456,6 +456,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 
 		//TODO implement DAA
 		warning("DAA not implemented yet");
+		throw UninmplementedException();
 
 		//Flags
 		Zflag(A == 0);
@@ -536,7 +537,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		IN_HALT = true;
-		warning("HALT", PC);
+		info("HALT", PC);
 
 		return true;
 		break;
@@ -549,7 +550,7 @@ bool Architecture::exec(Command cmd, Argument arg1, Argument arg2)
 		}
 
 		IN_STOP = true;
-		warning("STOP", PC);
+		info("STOP", PC);
 
 		return true;
 		break;

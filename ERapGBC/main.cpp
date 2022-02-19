@@ -111,7 +111,7 @@ void architecture_main(Architecture* arch)
 
 						if (i % 10000 == 0)
 						{
-							warning(to_string(steps - i) + " instructions left");
+							info(to_string(steps - i) + " instructions left");
 						}
 					}
 					cout << endl;
@@ -185,10 +185,10 @@ void architecture_main(Architecture* arch)
 
 bool check_buttons(Architecture* arch, bool pressedBefore)
 {
-	arch->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-	arch->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-	arch->up = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
-	arch->down = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+	arch->right = sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
+	arch->left = sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+	arch->up = sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
+	arch->down = sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
 	arch->Abtn = sf::Keyboard::isKeyPressed(sf::Keyboard::Z);
 	arch->Bbtn = sf::Keyboard::isKeyPressed(sf::Keyboard::X);
 	arch->select = sf::Keyboard::isKeyPressed(sf::Keyboard::E);

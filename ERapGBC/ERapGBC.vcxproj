@@ -157,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="architecture.cpp" />
+    <ClCompile Include="cartridge.cpp" />
     <ClCompile Include="disasm.cpp" />
     <ClCompile Include="execution.cpp" />
     <ClCompile Include="instructions.cpp" />

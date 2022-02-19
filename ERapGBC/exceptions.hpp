@@ -18,3 +18,19 @@ public:
         return "Read/Write size mismatch";
     }
 };
+
+class UninmplementedException : public exception
+{
+public:
+    virtual const char* what() const throw () {
+        return "Uninmplemented feature";
+    }
+};
+
+class ArchitectureException : public exception
+{
+public:
+    virtual const char* what() const throw () {
+        return "An operation that is inconsistent with the architecture was encounteres";
+    }
+};

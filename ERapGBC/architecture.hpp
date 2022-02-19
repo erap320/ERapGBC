@@ -313,14 +313,16 @@ public:
 
 	//Game cartridge
 	Cartridge cart;
+	byte lowROMBankNum = 1;
+	byte highROMBankNum = 0;
 	unsigned int currentROMBank = 1;
 	unsigned short currentRAMBank = 0;
 
 	//Function to perform bank switching
-	void swapCartROMBank(unsigned int selected);
+	void swapCartROMBank(byte low, byte high = 0);
 
 	//Function to perform bank switching
-	void swapCartRAMBank(unsigned short selected);
+	void swapCartRAMBank(byte value);
 
 	//Convenient bool that can be consulted to know
 	//if the processor is in double speed mode
@@ -361,7 +363,7 @@ public:
 	PixelLayer PSPlayer;
 
 	//Execute one instruction pointed by PC
-	data step(bool& debug);
+	data step(bool& debugger);
 
 	//Write the content of the ram in a .bin file
 	void dump_ram();

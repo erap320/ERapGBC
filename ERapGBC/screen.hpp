@@ -198,6 +198,7 @@ void drawLine(Architecture* arch, TileType type)
 		if (palNum > 7)
 		{
 			error("Non exising palette " + to_string(palNum) + " used in line " + to_string(line) + ", tile " + to_string(hTile));
+			throw ArchitectureException();
 			return;
 		}
 
@@ -310,6 +311,7 @@ void drawSprites(Architecture* arch)
 			if (palNum > 7)
 			{
 				error("Non exising palette " + to_string(palNum) + " used in sprite: " + to_string(i));
+				throw ArchitectureException();
 				return;
 			}
 

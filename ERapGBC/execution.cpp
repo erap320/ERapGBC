@@ -55,12 +55,6 @@ void address_checks(data address, byte val)
 		//for which it could be disabled
 		break;
 	}
-	case CART_ROM_BANK:
-		arch->swapCartROMBank(val.to_ulong());
-		break;
-	case CART_RAM_BANK:
-		arch->swapCartRAMBank(val.to_ulong());
-		break;
 	case LCDC:
 	{
 		arch->screenOn = val[7];
@@ -99,7 +93,30 @@ void address_checks(data address, byte val)
 	}
 	default:
 	{
-		if (address >= 0xE000 && address <= 0xFE00)
+		if (address >= CART_ROM_BANK && address <= CART_ROM_BANK + 0x0FFF)
+		{
+			switch (arch->cart.controller) {
+				case NO_CONTROLLER:
+					break;
+				default:
+					arch->swapCartROMBank(val, arch->highROMBankNum);
+					break;
+			}
+		}
+		else if (address >= CART_ROM_9TH_BIT_BANK && address <= CART_ROM_9TH_BIT_BANK + 0x0FFF)
+		{
+			switch (arch->cart.controller) {
+			case NO_CONTROLLER:
+				break;
+			default:
+				arch->swapCartROMBank(arch->lowROMBankNum, val);
+				break;
+			}
+		}
+		else if (address >= CART_RAM_BANK && address <= CART_RAM_BANK + 0x1FFF) {
+			arch->swapCartRAMBank(val);
+		}
+		else if (address >= 0xE000 && address <= 0xFE00)
 			arch->ram[address - 0x2000] = val;
 		else if (address >= 0xC000 && address <= 0xDE00)
 			arch->ram[address + 0x2000] = val;
@@ -549,7 +566,7 @@ bool Architecture::exec(Instruction i)
 	return exec(i.cmd, i.arg1, i.arg2);
 }
 
-data Architecture::step(bool& debug)
+data Architecture::step(bool& debugger)
 {
 	if (IN_STOP)
 	{
@@ -573,7 +590,7 @@ data Architecture::step(bool& debug)
 
 		data address = PC.to_ulong();
 		Instruction instr = disasm(address);
-		if (debug)
+		if (debugger)
 		{
 			print_registers();
 
@@ -603,7 +620,7 @@ data Architecture::step(bool& debug)
 
 		data address = PC.to_ulong();
 		Instruction instr = disasm(address);
-		if (debug)
+		if (debugger)
 		{
 			print_registers();
 
@@ -639,32 +656,32 @@ data Architecture::step(bool& debug)
 
 				if (interrupts[0]) //Vblank
 				{
-					warning("Vblank interrupt", PC);
+					debug("Vblank interrupt", PC);
 					PC = 0x40;
 					ram[IF][0] = false;
 				}
 				else if (interrupts[1]) //LCDC
 				{
-					warning("LCDC interrupt", PC);
+					debug("LCDC interrupt", PC);
 					PC = 0x48;
 					ram[IF][1] = false;
 				}
 				else if (interrupts[2]) //Timer overflow
 				{
-					warning("Timer interrupt", PC);
+					debug("Timer interrupt", PC);
 					PC = 0x50;
 					ram[IF][2] = false;
 				}
 				else if (interrupts[3]) //Serial transfer completion
 				{
-					warning("Serial interrupt", PC);
+					debug("Serial interrupt", PC);
 					//Serial transfer not implemented
 					//Should never happen, but we pretend it can, just in case
 					ram[IF][3] = false;
 				}
 				else if (interrupts[4]) //Buttons
 				{
-					warning("Joypad interrupt", PC);
+					debug("Joypad interrupt", PC);
 					PC = 0x60;
 					ram[IF][4] = false;
 				}
@@ -681,7 +698,7 @@ data Architecture::step(bool& debug)
 		case EI:
 		case DI:
 		case RETI:
-			warning(cmd_codes[instr.cmd], PC);
+			info(cmd_codes[instr.cmd], PC);
 			break;
 		}
 
@@ -698,12 +715,22 @@ data Architecture::step(bool& debug)
 		catch (const ReadWriteException& e)
 		{
 			error("Read/Write size mismatch while executing instruction", (word)address);
-			debug = true;
+			debugger = true;
 		}
 		catch (const WrongExecutionException& e)
 		{
 			error("Error while executing instruction " + cmd_codes[instr.cmd], (word)address);
-			debug = true;
+			debugger = true;
+		}
+		catch (const UninmplementedException& e)
+		{
+			error("Unimplemented feature encountered during execution", (word)address);
+			debugger = true;
+		}
+		catch (const ArchitectureException& e)
+		{
+			error("Inconsistent operation encountered during execution", (word)address);
+			debugger = true;
 		}
 
 		//Convert machine cycles to clock cycles
@@ -716,7 +743,7 @@ data Architecture::step(bool& debug)
 		//Manage display
 		lcdc();
 
-		if (debug || !result)
+		if (debugger || !result)
 		{
 			print_registers();
 

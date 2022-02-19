@@ -48,5 +48,6 @@
 //Additional useful addresses without an official name
 #define CART_RAM_ENABLE 0x0000
 #define CART_ROM_BANK 0x2000
+#define CART_ROM_9TH_BIT_BANK 0x3000
 #define CART_RAM_BANK 0x4000
 #define CART_BANK_TYPE 0x6000
