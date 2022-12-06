@@ -87,6 +87,7 @@ void Architecture::lcdc()
 					lineSet[Yline].wy = ram[WY].to_ulong();
 					lineSet[Yline].winEnabled = ram[LCDC][5] && ram[WX].to_ulong() < 0xA7;
 					lineSet[Yline].spritesEnabled = ram[LCDC][1];
+					lineSet[Yline].lcdc = ram[LCDC];
 
 					//Draw line on textures
 					drawLine(this, BG);

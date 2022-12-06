@@ -144,7 +144,7 @@ void drawLine(Architecture* arch, TileType type)
 		return;
 	}
 
-	byte lcdcReg = arch->ram[LCDC];
+	byte lcdcReg = arch->lineSet[line].lcdc;
 
 	data tileOffset;
 	byte tileAttributes;

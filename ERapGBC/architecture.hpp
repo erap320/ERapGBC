@@ -239,6 +239,7 @@ typedef sf::Uint8 PixelLayer[SCREEN_BYTES];
 struct LineSettings {
 	unsigned short scx, scy, wx, wy;
 	bool winEnabled, spritesEnabled;
+	byte lcdc;
 };
 
 //Architecture singleton
