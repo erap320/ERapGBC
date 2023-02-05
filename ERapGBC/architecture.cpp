@@ -648,6 +648,23 @@ void Architecture::print_instructions(data address, unsigned int rows)
 	out_mutex.unlock();
 }
 
+void Architecture::print_lines_settings()
+{
+	out_mutex.lock();
+	cout << "\n################## LINES #################\n";
+	for (unsigned int i = 0; i < LINES_NUM; i++)
+	{
+		cout << i << ":\n";
+		cout << " SCX:" << lineSet[i].scx << "\tSCY:" << lineSet[i].scy;
+		cout << "\t WX:" << lineSet[i].wx << "\tWY:" << lineSet[i].wy << endl;
+		cout << " Spr:" << to_hex(lineSet[i].spritesEnabled, true) << "\tWin:" << to_hex(lineSet[i].winEnabled, true) << endl;
+		cout << " LCDC:" << to_hex(lineSet[i].lcdc.to_ulong(), true) << "\t" << lineSet[i].lcdc.to_string() << endl;
+	}
+	cout << "---------------------------------------------\n";
+	out_mutex.unlock();
+}
+
+
 void Architecture::print_palettes()
 {
 	out_mutex.lock();

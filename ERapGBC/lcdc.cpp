@@ -81,14 +81,6 @@ void Architecture::lcdc()
 					ram[STAT][0] = 1;
 					lcdcMode = 3;
 
-					lineSet[Yline].scx = ram[SCX].to_ulong();
-					lineSet[Yline].scy = ram[SCY].to_ulong();
-					lineSet[Yline].wx = ram[WX].to_ulong() - 7;
-					lineSet[Yline].wy = ram[WY].to_ulong();
-					lineSet[Yline].winEnabled = ram[LCDC][5] && ram[WX].to_ulong() < 0xA7;
-					lineSet[Yline].spritesEnabled = ram[LCDC][1];
-					lineSet[Yline].lcdc = ram[LCDC];
-
 					//Draw line on textures
 					drawLine(this, BG);
 
@@ -104,6 +96,14 @@ void Architecture::lcdc()
 					ram[STAT][1] = 0;
 					ram[STAT][0] = 0;
 					lcdcMode = 0;
+
+					lineSet[Yline].scx = ram[SCX].to_ulong();
+					lineSet[Yline].scy = ram[SCY].to_ulong();
+					lineSet[Yline].wx = ram[WX].to_ulong() - 7;
+					lineSet[Yline].wy = ram[WY].to_ulong();
+					lineSet[Yline].winEnabled = ram[LCDC][5] && ram[WX].to_ulong() < 0xA7;
+					lineSet[Yline].spritesEnabled = ram[LCDC][1];
+					lineSet[Yline].lcdc = ram[LCDC];
 
 					//Hblank interrupt
 					if (ram[STAT][3])

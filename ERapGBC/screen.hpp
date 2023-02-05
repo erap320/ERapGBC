@@ -137,7 +137,7 @@ void drawLine(Architecture* arch, TileType type)
 
 	unsigned short line = arch->ram[LY].to_ulong();
 	
-	if (type == WIN && !arch->lineSet[line].winEnabled) {
+	if (type == WIN && (!arch->lineSet[line].winEnabled || line < arch->lineSet[line].wy)) {
 		for (unsigned short x = 0; x < LINE_W; x++) {
 			paintPixel(&arch->WINlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
 		}
@@ -153,28 +153,17 @@ void drawLine(Architecture* arch, TileType type)
 	RGBA paletteColors[4];
 	byte* tileMem;
 
-	//Get the offset values to use
-	unsigned short xOff=0, yOff=0;
-	if (type == BG)
-	{
-		xOff = arch->lineSet[line].scx;
-		yOff = arch->lineSet[line].scy;
-	}
-	else if (type == WIN)
-	{
-		xOff = arch->lineSet[line].wx;
-		yOff = arch->lineSet[line].wy;
-
-		//Make the horizontal section before the offset transparent
-		for (unsigned short x = 0; x < xOff; x++) {
-			paintPixel(&arch->WINlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
-		}
-	}
-
 	//The line from which tiles should be taken to draw this physical line
-	short drawLine = (line - yOff);
-	if (drawLine < 0)
-		drawLine = LINE_W - drawLine;
+	short drawLine = line;
+	if (type == BG) {
+		drawLine += arch->lineSet[line].scy;
+		drawLine %= LINE_W;
+	}
+	else if (type == WIN) {
+		drawLine -= arch->lineSet[line].wy;
+		if (drawLine < 0)
+			drawLine += LINE_W;
+	}
 
 	for (unsigned short hTile = 0; hTile < H_TILES; hTile++)
 	{
@@ -229,15 +218,19 @@ void drawLine(Architecture* arch, TileType type)
 		//Regular background
 		if (type == BG)
 		{
-			tile2line(tileMem, &arch->BGlayer[(line * LINE_BYTES)], (hTile * TILE_W) + xOff, paletteColors, drawLine % 8, hFlip, vFlip, WRAP);
+			tile2line(tileMem, &arch->BGlayer[(line * LINE_BYTES)], (hTile * TILE_W) - arch->lineSet[line].scx, paletteColors, drawLine % 8, hFlip, vFlip, WRAP);
 
 			//Overlay background
 			//Transparency
 			paletteColors[0].alpha = 0x00;
-			tile2line(tileMem, &arch->Olayer[(line * LINE_BYTES)], (hTile * TILE_W) + xOff, paletteColors, drawLine % 8, hFlip, vFlip, WRAP);
+			tile2line(tileMem, &arch->Olayer[(line * LINE_BYTES)], (hTile * TILE_W) - arch->lineSet[line].scx, paletteColors, drawLine % 8, hFlip, vFlip, WRAP);
 		}
 		else if (type == WIN) {
-			tile2line(tileMem, &arch->WINlayer[(line * LINE_BYTES)], (hTile * TILE_W) + xOff, paletteColors, drawLine % 8, hFlip, vFlip, DONT_WRAP);
+			//Make the section before the offset transparent
+			for (unsigned short x = 0; x < arch->lineSet[line].wx; x++) {
+				paintPixel(&arch->WINlayer[(line * LINE_BYTES) + x * BYTES_PER_PIXEL], TRANSPARENT);
+			}
+			tile2line(tileMem, &arch->WINlayer[(line * LINE_BYTES)], (hTile * TILE_W) + arch->lineSet[line].wx, paletteColors, drawLine % 8, hFlip, vFlip, DONT_WRAP);
 		}
 	}
 }

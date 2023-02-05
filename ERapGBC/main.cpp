@@ -66,6 +66,7 @@ void architecture_main(Architecture* arch)
 				//Print help message for the debugger
 				cout << " b (address): break execution on the address\n"
 					<< " c: continue with normal execution\n"
+					<< " l: print per-line display settings (scx/y, wx/y, sprites and window enabled/disabled, LCDC)\n"
 					<< " n (steps): make a number of steps\n"
 					<< " o: continue execution until a return instruction is encountered\n"
 					<< " m (address): print memory at address\n"
@@ -95,6 +96,12 @@ void architecture_main(Architecture* arch)
 			}
 			case 'c': {
 				debugger = false;
+				break;
+			}
+			case 'l': {
+				//Print display lines
+				arch->print_lines_settings();
+				wait = true;
 				break;
 			}
 			case 'n': {

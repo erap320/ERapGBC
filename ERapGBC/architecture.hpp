@@ -387,6 +387,9 @@ public:
 	//Print a human readable instruction
 	void print_instructions(data address, unsigned int rows);
 	
+	//Print lines settings
+	void print_lines_settings();
+
 	//Print color palettes
 	void print_palettes();
 	
