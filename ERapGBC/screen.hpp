@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SCREEN_HPP
+#define SCREEN_HPP
+
 #include "architecture.hpp"
 #include <SFML/Graphics.hpp>
 
@@ -344,3 +346,5 @@ void drawSprites(Architecture* arch)
 		}
 	}
 }
+
+#endif

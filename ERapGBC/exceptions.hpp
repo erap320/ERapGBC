@@ -1,4 +1,6 @@
-#pragma once
+#ifndef EXCEPTIONS_HPP
+#define EXCEPTIONS_HPP
+
 #include "utils.hpp"
 #include <exception>
 using std::exception;
@@ -34,3 +36,5 @@ public:
         return "An operation that is inconsistent with the architecture was encounteres";
     }
 };
+
+#endif

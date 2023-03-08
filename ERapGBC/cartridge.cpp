@@ -191,3 +191,90 @@ void Cartridge::setRamBanksNum(data code) {
 	}
 	}
 }
+
+string Cartridge::getSavefilePath(){
+	return directory + "/" + filename + ".sav";
+}
+
+bool Cartridge::loadROM(string romFileName)
+{
+	//Load rom
+	if (!std::filesystem::exists(romFileName)) {
+		error("ROM " + romFileName + " not found");
+		return false;
+	}
+
+	ifstream rom(romFileName, std::ios::in | std::ios::binary);
+	if (!rom) {
+		error("Error while opening ROM file " + romFileName);
+		return false;
+	}
+
+	filename = std::filesystem::path(romFileName).stem().string();
+	directory = std::filesystem::path(romFileName).parent_path().string();
+
+	char buffer;
+	for (data addr = 0; addr < ROM_BANK_SIZE && !rom.eof(); addr++)
+	{
+		rom.read(&buffer, 1);
+		romBanks[0][addr] = (byte)buffer;
+	}
+
+	try {
+		loadCartridgeType(romBanks[0][0x0147].to_ulong() & 0xff);
+		setRomBanksNum(romBanks[0][0x0148].to_ulong() & 0xff);
+		setRamBanksNum(romBanks[0][0x0149].to_ulong() & 0xff);
+	}
+	catch (const ArchitectureException& e) {
+		return false;
+	}
+
+	info("Memory controller set to " + memory_controller_names[controller]);
+
+	for (unsigned int bank = 1; bank < romBanksNum && !rom.eof(); bank++)
+	{
+		for (data addr = 0; addr < ROM_BANK_SIZE && !rom.eof(); addr++)
+		{
+			rom.read(&buffer, 1);
+			romBanks[bank][addr] = (byte)buffer;
+		}
+	}
+	rom.close();
+
+	//Check if there is a save file for the rom
+	string saveFilePath = getSavefilePath();
+	if (std::filesystem::exists(saveFilePath))
+	{
+		ifstream save(saveFilePath, std::ios::in | std::ios::binary);
+		if (!rom) {
+			error("Error while save file " + saveFilePath);
+			return false;
+		}
+
+		for (unsigned int bank = 0; bank < ramBanksNum; bank++)
+		{
+			for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+			{
+				save.read(&buffer, 1);
+				ramBanks[bank][addr] = buffer;
+			}
+		}
+
+		save.close();
+	}
+	else 
+	{
+		for (unsigned int bank = 0; bank < ramBanksNum; bank++)
+		{
+			for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
+			{
+				ramBanks[bank][addr] = 0xFF;
+			}
+		}
+	}
+
+	ramBanks[0][0x1FFF] = 0x37;
+
+	loaded = true;
+	return true;
+}

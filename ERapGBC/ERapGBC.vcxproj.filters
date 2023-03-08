@@ -21,7 +21,7 @@
     <ClInclude Include="utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="win_color.h">
+    <ClInclude Include="terminal_color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="registers.hpp">

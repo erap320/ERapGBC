@@ -35,6 +35,7 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+build/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -350,3 +351,6 @@ healthchecksdb
 
 # Dump files
 *.bin
+
+# Editors
+.vscode/

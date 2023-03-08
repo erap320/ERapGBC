@@ -1,4 +1,6 @@
-#pragma once
+#ifndef TYPES_HPP
+#define TYPES_HPP
+
 #include <bitset>
 using std::bitset;
 
@@ -9,3 +11,5 @@ typedef bitset<WORD_SIZE> word;
 
 //Because it's the default smallest numeric type in which a bitset exports numbers
 typedef unsigned long data;
+
+#endif

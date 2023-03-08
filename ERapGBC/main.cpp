@@ -222,8 +222,21 @@ int main(int argc, char* argv[])
 	Architecture* arch = Architecture::instance();
 
 	//ROM name from arguments
-	if (argc > 1)
-		arch->loadROM(string(argv[1]));
+	for (int i=1; i < argc; i++){
+		if (argv[i][0] == '-'){
+			if (string(argv[i]) == "-d") {
+				log_level = DEBUG;
+				info("Log level set to DEBUG");
+			}
+		} else {
+			if (!arch->cart.loaded) {
+				arch->loadROM(string(argv[1]));
+			} else {
+				error("More than one ROM path provided");
+				return 1;
+			}
+		}
+	}
 
 	//Start the "CPU"
 	thread processing(architecture_main, arch);

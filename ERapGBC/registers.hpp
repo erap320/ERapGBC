@@ -1,4 +1,5 @@
-#pragma once
+#ifndef REGISTERS_HPP
+#define REGISTERS_HPP
 
 ///////Addresses of notable registers that reside in ram
 
@@ -51,3 +52,5 @@
 #define CART_ROM_9TH_BIT_BANK 0x3000
 #define CART_RAM_BANK 0x4000
 #define CART_BANK_TYPE 0x6000
+
+#endif

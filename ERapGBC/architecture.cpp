@@ -278,7 +278,7 @@ void Architecture::runVDMA(data src, data dst)
 }
 
 void Architecture::save_cart_ram() {
-	ofstream save(cart.filename + ".sav", std::ios::binary);
+	ofstream save( cart.getSavefilePath(), std::ios::binary);
 
 	if (!save)
 	{

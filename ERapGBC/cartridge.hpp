@@ -1,4 +1,6 @@
-#pragma once
+#ifndef CARTRIDGE_HPP
+#define CARTRIDGE_HPP
+
 #include <string>
 #include <fstream>
 #include <filesystem>
@@ -63,6 +65,7 @@ const string memory_controller_names[] = { "UNKNOWN", "MBC1", "MBC2", "MBC3", "E
 class Cartridge {
 public:
 	string filename = "";
+	string directory = "";
 
 	byte romBanks[MAX_CART_ROM_BANKS][ROM_BANK_SIZE];
 	byte ramBanks[MAX_CART_RAM_BANKS][RAM_BANK_SIZE];
@@ -84,85 +87,8 @@ public:
 
 	bool loaded = false;
 
-	bool loadROM(string romFileName)
-	{
-		//Load rom
-		if (!std::filesystem::exists(romFileName)) {
-			error("ROM " + romFileName + " not found");
-			return false;
-		}
-
-		ifstream rom(romFileName, std::ios::in | std::ios::binary);
-		if (!rom) {
-			error("Error while opening ROM file " + romFileName);
-			return false;
-		}
-
-		filename = std::filesystem::path(romFileName).stem().string();
-
-		char buffer;
-		for (data addr = 0; addr < ROM_BANK_SIZE && !rom.eof(); addr++)
-		{
-			rom.read(&buffer, 1);
-			romBanks[0][addr] = (byte)buffer;
-		}
-
-		try {
-			loadCartridgeType(romBanks[0][0x0147].to_ulong() & 0xff);
-			setRomBanksNum(romBanks[0][0x0148].to_ulong() & 0xff);
-			setRamBanksNum(romBanks[0][0x0149].to_ulong() & 0xff);
-		}
-		catch (const ArchitectureException& e) {
-			return false;
-		}
-
-		info("Memory controller set to " + memory_controller_names[controller]);
-
-		for (unsigned int bank = 1; bank < romBanksNum && !rom.eof(); bank++)
-		{
-			for (data addr = 0; addr < ROM_BANK_SIZE && !rom.eof(); addr++)
-			{
-				rom.read(&buffer, 1);
-				romBanks[bank][addr] = (byte)buffer;
-			}
-		}
-		rom.close();
-
-		//Check if there is a save file for the rom
-		string saveFileName = filename + ".sav";
-		if (std::filesystem::exists(saveFileName))
-		{
-			ifstream save(saveFileName, std::ios::in | std::ios::binary);
-			if (!rom) {
-				error("Error while save file " + saveFileName);
-				return false;
-			}
-
-			for (unsigned int bank = 0; bank < ramBanksNum; bank++)
-			{
-				for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
-				{
-					save.read(&buffer, 1);
-					ramBanks[bank][addr] = buffer;
-				}
-			}
-
-			save.close();
-		}
-		else 
-		{
-			for (unsigned int bank = 0; bank < ramBanksNum; bank++)
-			{
-				for (data addr = 0; addr < RAM_BANK_SIZE; addr++)
-				{
-					ramBanks[bank][addr] = 0xFF;
-				}
-			}
-		}
-
-		ramBanks[0][0x1FFF] = 0x37;
-
-		loaded = true;
-		return true;
-	}
+	string getSavefilePath();
+	bool loadROM(string romFileName);
 };
+
+#endif

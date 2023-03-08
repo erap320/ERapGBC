@@ -1,4 +1,6 @@
-#pragma once
+#ifndef ARCHITECTURE_HPP
+#define ARCHITECTURE_HPP
+
 #include "exceptions.hpp"
 #include <iostream>
 #include <ostream>
@@ -407,3 +409,5 @@ public:
 	//Loads a rom file in memory
 	void loadROM(string romFileName);
 };
+
+#endif

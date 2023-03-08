@@ -10,3 +10,17 @@ Many inconsistencies have been debugged by comparing this program's output with 
 ## Screenshots
 
 <img src="Images/screenshot.png" />
+
+## Building
+
+### Windows
+Open `ERapGBC.sln` with Visual Studio 2019 or later, and follow the usual build process.
+
+### Linux
+Install SFML dependencies with your package manager. Here you can find a couple of examples:
+
+- Debian based distros: `sudo apt-get install libsfml-dev`
+- Arch based distros: `sudo pacman -S sfml`
+
+Then, build the executable by running `make` in the root of this repository.
+The resulting executable will be available at `build/erapGBC`.
